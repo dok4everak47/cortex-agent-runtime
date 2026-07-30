@@ -1,6 +1,6 @@
 import { runArtisan } from "../mcp.js"
 
-const ALLOWED_ARTISAN_COMMANDS = [
+export const ALLOWED_ARTISAN_COMMANDS = [
   "make:model",
   "make:controller",
   "make:migration",
@@ -21,7 +21,7 @@ const ALLOWED_ARTISAN_COMMANDS = [
   "env",
 ]
 
-function isArtisanAllowed(command: string): boolean {
+export function isArtisanAllowed(command: string): boolean {
   const base = command.trim().split(/\s+/)[0]
   return ALLOWED_ARTISAN_COMMANDS.includes(base)
 }
