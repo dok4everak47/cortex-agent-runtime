@@ -1,16 +1,21 @@
-import { runArtisan, runTinker } from "../mcp.js"
+import { runArtisan, runTinker, getLogger } from "../mcp.js"
 
 export function executeEnvInfo() {
-  const lines: string[] = []
+  try {
+    const lines: string[] = []
 
-  const env = runArtisan("env")
-  lines.push(`Environment: ${env || "failed to read"}`)
+    const env = runArtisan("env")
+    lines.push(`Environment: ${env || "failed to read"}`)
 
-  const debug = runTinker(`echo config('app.debug') ? 'true' : 'false'`)
-  lines.push(`Debug: ${debug || "failed to read"}`)
+    const debug = runTinker(`echo config('app.debug') ? 'true' : 'false'`)
+    lines.push(`Debug: ${debug || "failed to read"}`)
 
-  const dbCheck = runTinker(`try { \\DB::connection()->getPdo(); echo 'OK'; } catch (\\Exception $e) { echo 'FAIL: ' . $e->getMessage(); }`)
-  lines.push(`Database: ${dbCheck || "failed to check"}`)
+    const dbCheck = runTinker(`try { \\DB::connection()->getPdo(); echo 'OK'; } catch (\\Exception $e) { echo 'FAIL: ' . $e->getMessage(); }`)
+    lines.push(`Database: ${dbCheck || "failed to check"}`)
 
-  return { content: [{ type: "text" as const, text: lines.join("\n") }] }
+    return { content: [{ type: "text" as const, text: lines.join("\n") }] }
+  } catch (err) {
+    getLogger().error("envInfo failed", { error: String(err) })
+    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
+  }
 }

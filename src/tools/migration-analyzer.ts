@@ -1,6 +1,6 @@
 import { readdirSync, existsSync, readFileSync } from "fs"
 import { join } from "path"
-import { getConfig } from "../mcp.js"
+import { getConfig, getLogger } from "../mcp.js"
 
 interface Column {
   name: string
@@ -169,13 +169,18 @@ function formatTables(tables: TableInfo[]): string {
 }
 
 export function executeMigrationAnalyzer() {
-  const { projectPath } = getConfig()
-  const migrationsDir = join(projectPath, "database", "migrations")
+  try {
+    const { projectPath } = getConfig()
+    const migrationsDir = join(projectPath, "database", "migrations")
 
-  if (!existsSync(migrationsDir)) {
-    return { content: [{ type: "text" as const, text: "Error: database/migrations directory not found." }] }
+    if (!existsSync(migrationsDir)) {
+      return { content: [{ type: "text" as const, text: "Error: database/migrations directory not found." }], isError: true as const }
+    }
+
+    const tables = analyzeMigrations(migrationsDir)
+    return { content: [{ type: "text" as const, text: formatTables(tables) }] }
+  } catch (err) {
+    getLogger().error("migrationAnalyzer failed", { error: String(err) })
+    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
   }
-
-  const tables = analyzeMigrations(migrationsDir)
-  return { content: [{ type: "text" as const, text: formatTables(tables) }] }
 }

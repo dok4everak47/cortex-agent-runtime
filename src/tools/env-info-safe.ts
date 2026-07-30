@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from "fs"
 import { join } from "path"
-import { getConfig } from "../mcp.js"
+import { getConfig, getLogger } from "../mcp.js"
 
 const SENSITIVE_PATTERNS = [
   "APP_KEY",
@@ -20,23 +20,21 @@ function isSensitiveLine(line: string): boolean {
 }
 
 export function executeEnvInfoSafe() {
-  const { projectPath } = getConfig()
-  const envPath = join(projectPath, ".env")
+  try {
+    const { projectPath } = getConfig()
+    const envPath = join(projectPath, ".env")
 
-  if (!existsSync(envPath)) {
-    return { content: [{ type: "text" as const, text: "Error: .env file not found at " + envPath }] }
-  }
+    if (!existsSync(envPath)) {
+      return { content: [{ type: "text" as const, text: "Error: .env file not found at " + envPath }], isError: true as const }
+    }
 
-  const content = readFileSync(envPath, "utf-8")
-  const lines = content.split("\n")
-  const filtered = lines.filter((line) => !isSensitiveLine(line))
+    const content = readFileSync(envPath, "utf-8")
+    const lines = content.split("\n")
+    const filtered = lines.filter((line) => !isSensitiveLine(line))
 
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: filtered.join("\n"),
-      },
-    ],
+    return { content: [{ type: "text" as const, text: filtered.join("\n") }] }
+  } catch (err) {
+    getLogger().error("envInfoSafe failed", { error: String(err) })
+    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
   }
 }

@@ -1,4 +1,4 @@
-import { runArtisan } from "../mcp.js"
+import { runArtisan, getLogger } from "../mcp.js"
 
 function buildFlags(args: Record<string, unknown>): string[] {
   const flags: string[] = []
@@ -12,13 +12,18 @@ function buildFlags(args: Record<string, unknown>): string[] {
 }
 
 export function executeMakeMigration(args: Record<string, unknown>) {
-  const name = String(args.name ?? "").trim()
-  if (!name) {
-    return { content: [{ type: "text" as const, text: "Error: 'name' argument is required" }] }
-  }
+  try {
+    const name = String(args.name ?? "").trim()
+    if (!name) {
+      return { content: [{ type: "text" as const, text: "Error: 'name' argument is required" }], isError: true as const }
+    }
 
-  const flags = buildFlags(args)
-  const command = `make:migration ${name}${flags.length ? " " + flags.join(" ") : ""}`
-  const output = runArtisan(command)
-  return { content: [{ type: "text" as const, text: output || "Migration created successfully." }] }
+    const flags = buildFlags(args)
+    const command = `make:migration ${name}${flags.length ? " " + flags.join(" ") : ""}`
+    const output = runArtisan(command)
+    return { content: [{ type: "text" as const, text: output || "Migration created successfully." }] }
+  } catch (err) {
+    getLogger().error("makeMigration failed", { error: String(err) })
+    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
+  }
 }

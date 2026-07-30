@@ -6,7 +6,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that ex
 
 | Tool | Description |
 |------|-------------|
-| `artisan` | Run any `php artisan` command |
+| `artisan` | Run any `php artisan` command (whitelist restricted) |
 | `migrateStatus` | Check migration status |
 | `envInfo` | Display APP_ENV, APP_DEBUG, DB connection |
 | `cache` | Clear/cache config, routes, views |
@@ -14,6 +14,15 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that ex
 | `schema` | List database tables, view column definitions |
 | `model` | Scan Eloquent models in `app/Models` |
 | `log` | Tail the Laravel log file |
+| `routeList` | List routes with optional name/URI/method filter |
+| `runTest` | Run PHPUnit tests with optional filter |
+| `envInfoSafe` | Read .env filtering out sensitive values |
+| `frontendScanner` | Scan resources/views, js, css structure |
+| `makeModel` | Create a new Eloquent model with optional migration/factory |
+| `makeController` | Create a controller with optional resource/api/model binding |
+| `makeMigration` | Create a new migration file |
+| `migrationAnalyzer` | Parse migrations and extract schema (columns, types, FKs) |
+| `composerAnalyzer` | List project dependencies with version info |
 
 ## Usage
 

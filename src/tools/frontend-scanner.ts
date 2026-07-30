@@ -1,6 +1,6 @@
 import { readdirSync, existsSync, statSync } from "fs"
-import { join, relative } from "path"
-import { getConfig } from "../mcp.js"
+import { join } from "path"
+import { getConfig, getLogger } from "../mcp.js"
 
 interface FileTree {
   [key: string]: FileTree | true
@@ -56,27 +56,25 @@ function scanSection(resourcesPath: string, subDir: string, label: string): stri
 }
 
 export function executeFrontendScanner() {
-  const { projectPath } = getConfig()
-  const resourcesPath = join(projectPath, "resources")
+  try {
+    const { projectPath } = getConfig()
+    const resourcesPath = join(projectPath, "resources")
 
-  if (!existsSync(resourcesPath)) {
-    return { content: [{ type: "text" as const, text: "Error: resources/ directory not found at " + resourcesPath }] }
-  }
+    if (!existsSync(resourcesPath)) {
+      return { content: [{ type: "text" as const, text: "Error: resources/ directory not found at " + resourcesPath }], isError: true as const }
+    }
 
-  const sections = [
-    ...scanSection(resourcesPath, "views", "Views"),
-    "",
-    ...scanSection(resourcesPath, "js", "JS"),
-    "",
-    ...scanSection(resourcesPath, "css", "CSS"),
-  ]
+    const sections = [
+      ...scanSection(resourcesPath, "views", "Views"),
+      "",
+      ...scanSection(resourcesPath, "js", "JS"),
+      "",
+      ...scanSection(resourcesPath, "css", "CSS"),
+    ]
 
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: sections.join("\n"),
-      },
-    ],
+    return { content: [{ type: "text" as const, text: sections.join("\n") }] }
+  } catch (err) {
+    getLogger().error("frontendScanner failed", { error: String(err) })
+    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
   }
 }

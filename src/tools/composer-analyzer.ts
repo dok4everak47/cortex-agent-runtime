@@ -112,27 +112,32 @@ function formatPackageList(packages: ComposerPackage[], title: string): string[]
 }
 
 export function executeComposerAnalyzer(args: Record<string, unknown>) {
-  const logger = getLogger()
-  logger.info("composerAnalyzer called", { filter: args.filter, dev: args.dev })
+  try {
+    const logger = getLogger()
+    logger.info("composerAnalyzer called", { filter: args.filter, dev: args.dev })
 
-  const { projectPath } = getConfig()
-  const { packages, productionCount, devCount } = analyzeComposer(projectPath, {
-    filter: args.filter as string | undefined,
-    dev: Boolean(args.dev),
-  })
+    const { projectPath } = getConfig()
+    const { packages, productionCount, devCount } = analyzeComposer(projectPath, {
+      filter: args.filter as string | undefined,
+      dev: Boolean(args.dev),
+    })
 
-  const prodPkgs = packages.filter((p) => p.type === "production")
-  const devPkgs = packages.filter((p) => p.type === "dev")
+    const prodPkgs = packages.filter((p) => p.type === "production")
+    const devPkgs = packages.filter((p) => p.type === "dev")
 
-  const lines: string[] = [
-    ...formatPackageList(prodPkgs, "Production dependencies"),
-    "",
-    ...formatPackageList(devPkgs, "Dev dependencies"),
-    "",
-    `Total: ${packages.length} packages`,
-  ]
+    const lines: string[] = [
+      ...formatPackageList(prodPkgs, "Production dependencies"),
+      "",
+      ...formatPackageList(devPkgs, "Dev dependencies"),
+      "",
+      `Total: ${packages.length} packages`,
+    ]
 
-  logger.info("composerAnalyzer completed", { total: packages.length })
+    logger.info("composerAnalyzer completed", { total: packages.length })
 
-  return { content: [{ type: "text" as const, text: lines.join("\n") }] }
+    return { content: [{ type: "text" as const, text: lines.join("\n") }] }
+  } catch (err) {
+    getLogger().error("composerAnalyzer failed", { error: String(err) })
+    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
+  }
 }

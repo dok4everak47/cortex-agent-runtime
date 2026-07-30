@@ -1,4 +1,4 @@
-import { runArtisan } from "../mcp.js"
+import { runArtisan, getLogger } from "../mcp.js"
 
 export interface RouteEntry {
   domain: string | null
@@ -45,24 +45,29 @@ export function formatRouteList(routes: RouteEntry[]): string {
 }
 
 export function executeRouteList(args: Record<string, unknown>) {
-  const output = runArtisan("route:list --json")
-
-  let routes: RouteEntry[]
   try {
-    routes = JSON.parse(output)
-  } catch {
-    return { content: [{ type: "text" as const, text: "Failed to parse route list output. Raw output:\n" + output }] }
+    const output = runArtisan("route:list --json")
+
+    let routes: RouteEntry[]
+    try {
+      routes = JSON.parse(output)
+    } catch {
+      return { content: [{ type: "text" as const, text: "Failed to parse route list output. Raw output:\n" + output }], isError: true as const }
+    }
+
+    if (!Array.isArray(routes)) {
+      return { content: [{ type: "text" as const, text: "Unexpected route list format: expected an array." }], isError: true as const }
+    }
+
+    const filtered = filterRoutes(routes, {
+      name: args.name as string | undefined,
+      uri: args.uri as string | undefined,
+      method: args.method as string | undefined,
+    })
+
+    return { content: [{ type: "text" as const, text: formatRouteList(filtered) }] }
+  } catch (err) {
+    getLogger().error("routeList failed", { error: String(err) })
+    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
   }
-
-  if (!Array.isArray(routes)) {
-    return { content: [{ type: "text" as const, text: "Unexpected route list format: expected an array." }] }
-  }
-
-  const filtered = filterRoutes(routes, {
-    name: args.name as string | undefined,
-    uri: args.uri as string | undefined,
-    method: args.method as string | undefined,
-  })
-
-  return { content: [{ type: "text" as const, text: formatRouteList(filtered) }] }
 }
