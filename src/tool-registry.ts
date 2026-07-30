@@ -15,6 +15,10 @@ import { executeRouteList } from "./tools/route-list.js"
 import { executeRunTest } from "./tools/run-test.js"
 import { executeEnvInfoSafe } from "./tools/env-info-safe.js"
 import { executeFrontendScanner } from "./tools/frontend-scanner.js"
+import { executeMakeModel } from "./tools/make-model.js"
+import { executeMakeController } from "./tools/make-controller.js"
+import { executeMakeMigration } from "./tools/make-migration.js"
+import { executeMigrationAnalyzer } from "./tools/migration-analyzer.js"
 
 export type ToolHandler = (args: Record<string, unknown>) => {
   content: { type: "text"; text: string }[]
@@ -173,6 +177,56 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: [],
     },
   },
+  {
+    name: "makeModel",
+    description: "Create a new Eloquent model class",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Model class name (e.g. 'Post', 'User')" },
+        migration: { type: "boolean", description: "Create migration file" },
+        factory: { type: "boolean", description: "Create factory class" },
+        seed: { type: "boolean", description: "Create seeder class" },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "makeController",
+    description: "Create a new controller class",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Controller name (e.g. 'PostController')" },
+        resource: { type: "boolean", description: "Generate resource controller with CRUD methods" },
+        model: { type: "string", description: "Bind to a model for resource controller" },
+        api: { type: "boolean", description: "Generate API controller (excludes web methods)" },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "makeMigration",
+    description: "Create a new migration file",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Migration name (e.g. 'create_posts_table')" },
+        table: { type: "string", description: "Table name for create/update operations" },
+        create: { type: "boolean", description: "Create the table" },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "migrationAnalyzer",
+    description: "Parse Laravel migration files and extract database schema (columns, types, foreign keys)",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
 ]
 
 export const toolHandlers: Record<string, ToolHandler> = {
@@ -188,6 +242,10 @@ export const toolHandlers: Record<string, ToolHandler> = {
   runTest: executeRunTest,
   envInfoSafe: executeEnvInfoSafe,
   frontendScanner: executeFrontendScanner,
+  makeModel: executeMakeModel,
+  makeController: executeMakeController,
+  makeMigration: executeMakeMigration,
+  migrationAnalyzer: executeMigrationAnalyzer,
 }
 
 export function handleToolCall(name: string, args: Record<string, unknown>) {
