@@ -12,6 +12,8 @@ import { executeConfigGet } from "./tools/config-get.js"
 import { executeSchema } from "./tools/schema.js"
 import { executeModel } from "./tools/model.js"
 import { executeLog } from "./tools/log.js"
+import { executeRouteList } from "./tools/route-list.js"
+import { executeRunTest } from "./tools/run-test.js"
 
 const server = new Server(
   { name: "laravel-mcp-server", version: "0.1.0" },
@@ -117,6 +119,37 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: [],
       },
     },
+    {
+      name: "routeList",
+      description: "List Laravel routes with optional filtering by name or URI",
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Filter by route name (e.g. 'notes')" },
+          uri: { type: "string", description: "Filter by URI pattern (e.g. '/notes')" },
+          method: {
+            type: "string",
+            enum: ["GET", "POST", "PUT", "DELETE"],
+            description: "Filter by HTTP method",
+          },
+        },
+        required: [],
+      },
+    },
+    {
+      name: "runTest",
+      description: "Run PHPUnit tests with optional filter",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "string",
+            description: "Test name or class filter (e.g. 'PostTest' or 'test_it_can_create_post')",
+          },
+        },
+        required: [],
+      },
+    },
   ],
 }))
 
@@ -129,6 +162,8 @@ const toolHandlers: Record<string, (args: Record<string, unknown>) => { content:
   schema: executeSchema,
   model: executeModel,
   log: executeLog,
+  routeList: executeRouteList,
+  runTest: executeRunTest,
 }
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
