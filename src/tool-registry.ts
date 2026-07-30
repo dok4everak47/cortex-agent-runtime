@@ -3,6 +3,7 @@
  * Extracted so that tests can validate tool registration without
  * needing to import the top-level server or mock the SDK.
  */
+import { getLogger } from "./mcp.js"
 import { executeArtisan } from "./tools/artisan.js"
 import { executeMigrateStatus } from "./tools/migrate-status.js"
 import { executeEnvInfo } from "./tools/env-info.js"
@@ -19,6 +20,7 @@ import { executeMakeModel } from "./tools/make-model.js"
 import { executeMakeController } from "./tools/make-controller.js"
 import { executeMakeMigration } from "./tools/make-migration.js"
 import { executeMigrationAnalyzer } from "./tools/migration-analyzer.js"
+import { executeComposerAnalyzer } from "./tools/composer-analyzer.js"
 
 export type ToolHandler = (args: Record<string, unknown>) => {
   content: { type: "text"; text: string }[]
@@ -227,6 +229,18 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: [],
     },
   },
+  {
+    name: "composerAnalyzer",
+    description: "List Laravel project dependencies from composer.json and composer.lock",
+    inputSchema: {
+      type: "object",
+      properties: {
+        filter: { type: "string", description: "Filter by package name (partial match, e.g. 'laravel', 'spatie')" },
+        dev: { type: "boolean", description: "Include dev dependencies (default: false)" },
+      },
+      required: [],
+    },
+  },
 ]
 
 export const toolHandlers: Record<string, ToolHandler> = {
@@ -246,15 +260,35 @@ export const toolHandlers: Record<string, ToolHandler> = {
   makeController: executeMakeController,
   makeMigration: executeMakeMigration,
   migrationAnalyzer: executeMigrationAnalyzer,
+  composerAnalyzer: executeComposerAnalyzer,
 }
 
 export function handleToolCall(name: string, args: Record<string, unknown>) {
+  const logger = getLogger()
   const handler = toolHandlers[name]
   if (!handler) {
+    logger.warn("tool not found", { name })
     return {
       content: [{ type: "text" as const, text: `Unknown tool: ${name}` }],
       isError: true as const,
     }
   }
-  return handler(args)
+
+  logger.info("tool called", { name, args })
+  const start = performance.now()
+
+  try {
+    const result = handler(args)
+    const durationMs = (performance.now() - start).toFixed(1)
+    logger.info("tool completed", { name, durationMs })
+    return result
+  } catch (err) {
+    const durationMs = (performance.now() - start).toFixed(1)
+    const msg = err instanceof Error ? err.message : String(err)
+    logger.error("tool failed", { name, durationMs, error: msg })
+    return {
+      content: [{ type: "text" as const, text: `Error: ${msg}` }],
+      isError: true as const,
+    }
+  }
 }

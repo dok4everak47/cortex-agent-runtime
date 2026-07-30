@@ -1,6 +1,12 @@
 import { execSync } from "child_process"
 import { existsSync } from "fs"
 import { join } from "path"
+import { Logger, getLogger as _getLogger, LogLevel } from "./logger.js"
+
+// Re-export for other modules
+export { _getLogger as getLogger, Logger, LogLevel }
+
+const logger = _getLogger()
 
 function hasNixFlake(projectPath: string): boolean {
   return existsSync(join(projectPath, "flake.nix"))
@@ -8,12 +14,16 @@ function hasNixFlake(projectPath: string): boolean {
 
 function resolvePhpPath(projectPath: string): string {
   const configured = process.env.PHP_PATH
-  if (configured) return configured
+  if (configured) {
+    logger.debug("php path from env", { PHP_PATH: configured })
+    return configured
+  }
   try {
     execSync("php -v", { stdio: "ignore", windowsHide: true })
+    logger.debug("php found in PATH")
     return "php"
   } catch {
-    // php not in PATH
+    logger.debug("php not in PATH")
   }
   if (hasNixFlake(projectPath)) {
     try {
@@ -22,9 +32,12 @@ function resolvePhpPath(projectPath: string): string {
         { cwd: projectPath, encoding: "utf-8", timeout: 120_000 },
       )
       const m = out.match(/NIX_PHP_PATH_____START\n(.+?)\nNIX_PHP_PATH_____END/)
-      if (m) return m[1].trim()
+      if (m) {
+        logger.debug("php path from nix flake", { phpPath: m[1].trim() })
+        return m[1].trim()
+      }
     } catch {
-      // fall through
+      logger.debug("nix flake php lookup failed, falling back to default")
     }
   }
   return "php"
@@ -42,21 +55,28 @@ export function getConfig() {
 
 export function runCommand(command: string): string {
   const { projectPath } = getConfig()
+  logger.debug("executing command", { command, cwd: projectPath })
   try {
-    return execSync(command, { cwd: projectPath, encoding: "utf-8" }).trim()
+    const output = execSync(command, { cwd: projectPath, encoding: "utf-8" }).trim()
+    logger.debug("command completed", { command })
+    return output
   } catch (err) {
     const e = err as { stdout?: string; stderr?: string; status?: number }
+    logger.warn("command failed", { command, exitCode: e.status })
     return [e.stdout?.trim(), e.stderr?.trim()].filter(Boolean).join("\n") || `Command failed with exit code ${e.status ?? 1}`
   }
 }
 
 export function runArtisan(subcommand: string): string {
   const { phpPath } = getConfig()
-  return runCommand(`${phpPath} artisan ${subcommand}`)
+  logger.debug("running artisan", { subcommand })
+  const result = runCommand(`${phpPath} artisan ${subcommand}`)
+  return result
 }
 
 export function runTinker(script: string): string {
   const { phpPath } = getConfig()
   const escaped = script.replace(/'/g, "'\\''")
+  logger.debug("running tinker", { scriptLength: script.length })
   return runCommand(`${phpPath} artisan tinker --execute='${escaped}'`)
 }

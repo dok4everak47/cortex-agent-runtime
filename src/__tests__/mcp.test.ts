@@ -8,6 +8,7 @@ describe("Tool definitions", () => {
     const expected = [
       "artisan",
       "cache",
+      "composerAnalyzer",
       "configGet",
       "envInfo",
       "envInfoSafe",

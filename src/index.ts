@@ -5,15 +5,19 @@ import {
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js"
 import { TOOL_DEFINITIONS, handleToolCall } from "./tool-registry.js"
+import { getLogger } from "./mcp.js"
+
+const logger = getLogger()
 
 const server = new Server(
   { name: "laravel-mcp-server", version: "0.1.0" },
   { capabilities: { tools: {} } },
 )
 
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: TOOL_DEFINITIONS,
-}))
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  logger.info("tools/list called")
+  return { tools: TOOL_DEFINITIONS }
+})
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params
