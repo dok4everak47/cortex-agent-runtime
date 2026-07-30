@@ -7,6 +7,7 @@ export const ALLOWED_ARTISAN_COMMANDS = [
   "make:factory",
   "make:seeder",
   "make:request",
+  "make:test",
   "make:policy",
   "migrate",
   "migrate:status",

@@ -21,6 +21,7 @@ import { executeMakeController } from "./tools/make-controller.js"
 import { executeMakeMigration } from "./tools/make-migration.js"
 import { executeMigrationAnalyzer } from "./tools/migration-analyzer.js"
 import { executeComposerAnalyzer } from "./tools/composer-analyzer.js"
+import { executeCrudGenerator } from "./tools/crud-generator.js"
 
 export type ToolHandler = (args: Record<string, unknown>) => {
   content: { type: "text"; text: string }[]
@@ -241,6 +242,19 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: [],
     },
   },
+  {
+    name: "crudGenerator",
+    description: "Generate full CRUD for a Laravel entity: migration, model, controller, request, route, test, and run tests",
+    inputSchema: {
+      type: "object",
+      properties: {
+        entity: { type: "string", description: "Entity name in singular (e.g. 'Post', 'Category')" },
+        table: { type: "string", description: "Table name (optional, defaults to snake_plural of entity)" },
+        fields: { type: "string", description: "Optional comma-separated field definitions (e.g. 'title:string,content:text,user_id:foreignId')" },
+      },
+      required: ["entity"],
+    },
+  },
 ]
 
 export const toolHandlers: Record<string, ToolHandler> = {
@@ -261,6 +275,7 @@ export const toolHandlers: Record<string, ToolHandler> = {
   makeMigration: executeMakeMigration,
   migrationAnalyzer: executeMigrationAnalyzer,
   composerAnalyzer: executeComposerAnalyzer,
+  crudGenerator: executeCrudGenerator,
 }
 
 export function handleToolCall(name: string, args: Record<string, unknown>) {

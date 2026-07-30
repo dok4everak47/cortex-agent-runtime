@@ -10,6 +10,7 @@ describe("Tool definitions", () => {
       "cache",
       "composerAnalyzer",
       "configGet",
+      "crudGenerator",
       "envInfo",
       "envInfoSafe",
       "frontendScanner",
