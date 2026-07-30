@@ -23,8 +23,11 @@ import { executeMigrationAnalyzer } from "./tools/migration-analyzer.js"
 import { executeComposerAnalyzer } from "./tools/composer-analyzer.js"
 import { executeCrudGenerator } from "./workflows/crud-generator.js"
 
-export type ToolHandler = (args: Record<string, unknown>) => {
+export type ToolHandler = (args: Record<string, unknown>) => ToolResult | Promise<ToolResult>
+
+export type ToolResult = {
   content: { type: "text"; text: string }[]
+  isError?: boolean
 }
 
 interface ToolDefinition {
@@ -278,7 +281,7 @@ export const toolHandlers: Record<string, ToolHandler> = {
   crudGenerator: executeCrudGenerator,
 }
 
-export function handleToolCall(name: string, args: Record<string, unknown>) {
+export async function handleToolCall(name: string, args: Record<string, unknown>): Promise<ToolResult> {
   const logger = getLogger()
   const handler = toolHandlers[name]
   if (!handler) {
@@ -293,7 +296,7 @@ export function handleToolCall(name: string, args: Record<string, unknown>) {
   const start = performance.now()
 
   try {
-    const result = handler(args)
+    const result = await handler(args)
     const durationMs = (performance.now() - start).toFixed(1)
     logger.info("tool completed", { name, durationMs })
     return result

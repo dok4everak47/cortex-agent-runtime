@@ -56,16 +56,14 @@ describe("tool handlers", () => {
 })
 
 describe("handleToolCall dispatch", () => {
-  it("returns error for unknown tool", () => {
-    const result = handleToolCall("unknownTool", {})
-    assert.ok((result as any).isError)
+  it("returns error for unknown tool", async () => {
+    const result = await handleToolCall("unknownTool", {})
+    assert.ok(result.isError)
     assert.ok(result.content[0].text.includes("Unknown tool"))
   })
 
-  it("dispatches to correct handler for known tool", () => {
-    // 'artisan' is a known tool; calling with an empty command should
-    // return an error message from the artisan handler itself
-    const result = handleToolCall("artisan", { command: "" })
+  it("dispatches to correct handler for known tool", async () => {
+    const result = await handleToolCall("artisan", { command: "" })
     assert.ok(result.content[0].text.includes("Error"))
   })
 })
