@@ -1,6 +1,7 @@
 import { readdirSync, existsSync, statSync } from "fs"
 import { join } from "path"
-import { getConfig, getLogger } from "../mcp.js"
+import { getConfig } from "../mcp.js"
+import { success, failure } from "../tool-helper.js"
 
 interface FileTree {
   [key: string]: FileTree | true
@@ -61,7 +62,7 @@ export function executeFrontendScanner() {
     const resourcesPath = join(projectPath, "resources")
 
     if (!existsSync(resourcesPath)) {
-      return { content: [{ type: "text" as const, text: "Error: resources/ directory not found at " + resourcesPath }], isError: true as const }
+      return failure("frontendScanner", new Error(`resources/ directory not found at ${resourcesPath}`))
     }
 
     const sections = [
@@ -72,9 +73,8 @@ export function executeFrontendScanner() {
       ...scanSection(resourcesPath, "css", "CSS"),
     ]
 
-    return { content: [{ type: "text" as const, text: sections.join("\n") }] }
+    return success(sections.join("\n"))
   } catch (err) {
-    getLogger().error("frontendScanner failed", { error: String(err) })
-    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
+    return failure("frontendScanner", err)
   }
 }

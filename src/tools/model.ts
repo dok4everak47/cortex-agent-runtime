@@ -1,4 +1,5 @@
-import { runTinker, getLogger } from "../mcp.js"
+import { runTinker } from "../mcp.js"
+import { success, failure } from "../tool-helper.js"
 
 export function executeModel() {
   try {
@@ -22,10 +23,8 @@ export function executeModel() {
         echo implode(PHP_EOL, $models);
       }
     `.trim()
-    const output = runTinker(script)
-    return { content: [{ type: "text" as const, text: output || "(no models found)" }] }
+    return success(runTinker(script) || "(no models found)")
   } catch (err) {
-    getLogger().error("model failed", { error: String(err) })
-    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
+    return failure("model", err)
   }
 }

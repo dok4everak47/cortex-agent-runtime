@@ -1,6 +1,7 @@
 import { runArtisan, getConfig, getLogger } from "../mcp.js"
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs"
 import { join } from "path"
+import { success, failure } from "../tool-helper.js"
 
 const logger = getLogger()
 
@@ -205,10 +206,7 @@ export function executeCrudGenerator(args: Record<string, unknown>) {
   try {
     const entity = String(args.entity ?? "").trim()
     if (!entity) {
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify({ error: "'entity' argument is required" }) }],
-        isError: true as const,
-      }
+      return failure("crudGenerator", new Error("'entity' argument is required"))
     }
 
     const table = args.table ? String(args.table).trim() : snakeCase(pluralize(entity))
@@ -449,20 +447,8 @@ export function executeCrudGenerator(args: Record<string, unknown>) {
 
     const summary = `Created ${entityPascal} CRUD: ${steps.filter(s => s.status === "done").length} of ${steps.length} steps completed`
 
-    return {
-      content: [{
-        type: "text" as const,
-        text: JSON.stringify({ steps, testResult, summary }, null, 2),
-      }],
-    }
+    return success(JSON.stringify({ steps, testResult, summary }, null, 2))
   } catch (err) {
-    logger.error("crudGenerator failed", { error: String(err) })
-    return {
-      content: [{
-        type: "text" as const,
-        text: JSON.stringify({ error: String(err), steps }, null, 2),
-      }],
-      isError: true as const,
-    }
+    return failure("crudGenerator", err)
   }
 }

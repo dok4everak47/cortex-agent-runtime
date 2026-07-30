@@ -1,4 +1,5 @@
-import { runArtisan, getLogger } from "../mcp.js"
+import { runArtisan } from "../mcp.js"
+import { success, failure } from "../tool-helper.js"
 
 export const ALLOWED_ARTISAN_COMMANDS = [
   "make:model",
@@ -31,20 +32,15 @@ export function executeArtisan(args: Record<string, unknown>) {
   try {
     const command = String(args.command ?? "")
     if (!command) {
-      return { content: [{ type: "text" as const, text: "Error: 'command' argument is required" }], isError: true as const }
+      return failure("artisan", new Error("'command' argument is required"))
     }
 
     if (!isArtisanAllowed(command)) {
-      return {
-        content: [{ type: "text" as const, text: `Error: command '${command.trim().split(/\s+/)[0]}' is not allowed. Allowed commands: ${ALLOWED_ARTISAN_COMMANDS.join(", ")}` }],
-        isError: true as const,
-      }
+      return failure("artisan", new Error(`command '${command.trim().split(/\s+/)[0]}' is not allowed. Allowed commands: ${ALLOWED_ARTISAN_COMMANDS.join(", ")}`))
     }
 
-    const output = runArtisan(command)
-    return { content: [{ type: "text" as const, text: output }] }
+    return success(runArtisan(command))
   } catch (err) {
-    getLogger().error("artisan failed", { error: String(err) })
-    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
+    return failure("artisan", err)
   }
 }

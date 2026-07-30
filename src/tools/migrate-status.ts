@@ -1,11 +1,10 @@
-import { runArtisan, getLogger } from "../mcp.js"
+import { runArtisan } from "../mcp.js"
+import { success, failure } from "../tool-helper.js"
 
 export function executeMigrateStatus() {
   try {
-    const output = runArtisan("migrate:status")
-    return { content: [{ type: "text" as const, text: output }] }
+    return success(runArtisan("migrate:status"))
   } catch (err) {
-    getLogger().error("migrateStatus failed", { error: String(err) })
-    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
+    return failure("migrateStatus", err)
   }
 }

@@ -21,7 +21,7 @@ import { executeMakeController } from "./tools/make-controller.js"
 import { executeMakeMigration } from "./tools/make-migration.js"
 import { executeMigrationAnalyzer } from "./tools/migration-analyzer.js"
 import { executeComposerAnalyzer } from "./tools/composer-analyzer.js"
-import { executeCrudGenerator } from "./tools/crud-generator.js"
+import { executeCrudGenerator } from "./workflows/crud-generator.js"
 
 export type ToolHandler = (args: Record<string, unknown>) => {
   content: { type: "text"; text: string }[]

@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from "fs"
 import { join } from "path"
 import { getConfig, getLogger } from "../mcp.js"
+import { success, failure } from "../tool-helper.js"
 
 interface ComposerPackage {
   name: string
@@ -135,9 +136,8 @@ export function executeComposerAnalyzer(args: Record<string, unknown>) {
 
     logger.info("composerAnalyzer completed", { total: packages.length })
 
-    return { content: [{ type: "text" as const, text: lines.join("\n") }] }
+    return success(lines.join("\n"))
   } catch (err) {
-    getLogger().error("composerAnalyzer failed", { error: String(err) })
-    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
+    return failure("composerAnalyzer", err)
   }
 }

@@ -10,21 +10,21 @@ import assert from "node:assert"
 describe("crudGenerator", () => {
   it("returns error for missing entity", async () => {
     // Dynamic import to avoid needing a real Laravel project
-    const mod = await import("../tools/crud-generator.js")
+    const mod = await import("../workflows/crud-generator.js")
     const result = mod.executeCrudGenerator({})
     assert.ok(result.isError)
     assert.ok(result.content[0].text.includes("entity"))
   })
 
   it("returns error for empty entity", async () => {
-    const mod = await import("../tools/crud-generator.js")
+    const mod = await import("../workflows/crud-generator.js")
     const result = mod.executeCrudGenerator({ entity: "" })
     assert.ok(result.isError)
     assert.ok(result.content[0].text.includes("entity"))
   })
 
   it("handles non-existent laravel project gracefully", async () => {
-    const mod = await import("../tools/crud-generator.js")
+    const mod = await import("../workflows/crud-generator.js")
 
     // Backup and override env
     const origPath = process.env.LARAVEL_PROJECT_PATH

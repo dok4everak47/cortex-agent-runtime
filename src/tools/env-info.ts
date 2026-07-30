@@ -1,4 +1,5 @@
-import { runArtisan, runTinker, getLogger } from "../mcp.js"
+import { runArtisan, runTinker } from "../mcp.js"
+import { success, failure } from "../tool-helper.js"
 
 export function executeEnvInfo() {
   try {
@@ -13,9 +14,8 @@ export function executeEnvInfo() {
     const dbCheck = runTinker(`try { \\DB::connection()->getPdo(); echo 'OK'; } catch (\\Exception $e) { echo 'FAIL: ' . $e->getMessage(); }`)
     lines.push(`Database: ${dbCheck || "failed to check"}`)
 
-    return { content: [{ type: "text" as const, text: lines.join("\n") }] }
+    return success(lines.join("\n"))
   } catch (err) {
-    getLogger().error("envInfo failed", { error: String(err) })
-    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
+    return failure("envInfo", err)
   }
 }

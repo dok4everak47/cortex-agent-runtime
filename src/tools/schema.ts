@@ -1,4 +1,5 @@
-import { runTinker, getLogger } from "../mcp.js"
+import { runTinker } from "../mcp.js"
+import { success, failure } from "../tool-helper.js"
 
 export function executeSchema(args: Record<string, unknown>) {
   try {
@@ -11,14 +12,13 @@ export function executeSchema(args: Record<string, unknown>) {
           echo (is_array($t) ? ($t['name'] ?? $t['schema'] . '.' . $t['name']) : $t) . PHP_EOL;
         }
       `.trim()
-      const output = runTinker(script)
-      return { content: [{ type: "text" as const, text: output || "(no tables)" }] }
+      return success(runTinker(script) || "(no tables)")
     }
 
     if (action === "columns") {
       const table = String(args.table ?? "")
       if (!table) {
-        return { content: [{ type: "text" as const, text: "Error: 'table' argument is required when action is 'columns'" }], isError: true as const }
+        return failure("schema", new Error("'table' argument is required when action is 'columns'"))
       }
       const escaped = table.replace(/'/g, "\\'")
       const script = `
@@ -34,13 +34,11 @@ export function executeSchema(args: Record<string, unknown>) {
           }
         }
       `.trim()
-      const output = runTinker(script)
-      return { content: [{ type: "text" as const, text: output }] }
+      return success(runTinker(script))
     }
 
-    return { content: [{ type: "text" as const, text: `Error: unknown action '${action}'. Valid actions: tables, columns` }], isError: true as const }
+    return failure("schema", new Error(`unknown action '${action}'. Valid actions: tables, columns`))
   } catch (err) {
-    getLogger().error("schema failed", { error: String(err) })
-    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
+    return failure("schema", err)
   }
 }

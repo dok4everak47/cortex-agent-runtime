@@ -1,4 +1,5 @@
-import { runArtisan, getLogger } from "../mcp.js"
+import { runArtisan } from "../mcp.js"
+import { success, failure } from "../tool-helper.js"
 
 const cacheActions: Record<string, string> = {
   clear: "cache:clear",
@@ -14,12 +15,10 @@ export function executeCache(args: Record<string, unknown>) {
     const action = String(args.action ?? "")
     const command = cacheActions[action]
     if (!command) {
-      return { content: [{ type: "text" as const, text: `Error: unknown action '${action}'. Valid actions: ${Object.keys(cacheActions).join(", ")}` }], isError: true as const }
+      return failure("cache", new Error(`unknown action '${action}'. Valid actions: ${Object.keys(cacheActions).join(", ")}`))
     }
-    const output = runArtisan(command)
-    return { content: [{ type: "text" as const, text: output || `${command} executed successfully` }] }
+    return success(runArtisan(command) || `${command} executed successfully`)
   } catch (err) {
-    getLogger().error("cache failed", { error: String(err) })
-    return { content: [{ type: "text" as const, text: "Error: " + (err instanceof Error ? err.message : String(err)) }], isError: true as const }
+    return failure("cache", err)
   }
 }

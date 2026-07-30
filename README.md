@@ -35,7 +35,7 @@ Add to `~/.config/opencode/opencode.jsonc`:
   "mcpServers": {
     "laravel": {
       "type": "local",
-      "command": ["npx", "tsx", "/path/to/laravel-mcp-server/src/index.ts"]
+      "command": ["node", "/path/to/laravel-mcp-server/dist/index.js"]
     }
   }
 }
@@ -49,8 +49,8 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "laravel": {
-      "command": "npx",
-      "args": ["tsx", "/path/to/laravel-mcp-server/src/index.ts"]
+      "command": "node",
+      "args": ["/path/to/laravel-mcp-server/dist/index.js"]
     }
   }
 }
@@ -73,8 +73,11 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```bash
 npm install
-npm run typecheck
-npm start
+npm run typecheck   # tsc --noEmit (type-check only)
+npm test            # run all tests
+npm run build       # compile to dist/
+npm start           # node dist/index.js
+npm run dev         # npx tsx src/index.ts (hot reload)
 ```
 
 ## License
