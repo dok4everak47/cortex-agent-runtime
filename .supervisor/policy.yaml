@@ -1,0 +1,16 @@
+rules:
+  - name: protect-env
+    action: block
+    pattern:
+      - .env
+  - name: dangerous-command
+    action: confirm
+    pattern:
+      - rm -rf
+      - git reset --hard
+      - git push --force
+  - name: database-operation
+    action: confirm
+    pattern:
+      - DROP DATABASE
+      - artisan migrate:fresh

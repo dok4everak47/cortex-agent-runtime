@@ -1,0 +1,18 @@
+{
+  "pid": 90917,
+  "taskId": "83912f76-759b-4bdf-b46d-560500c1f09d",
+  "taskDescription": "修复文章保存异常",
+  "workflow": "bug-fix",
+  "currentStep": 0,
+  "totalSteps": 3,
+  "currentAgent": "coder",
+  "currentAction": "reproduce and diagnose",
+  "status": "running",
+  "progress": "Session ended. 0 files, 0 commands.",
+  "heartbeat": "2026-07-30T11:31:58.177Z",
+  "startedAt": "2026-07-30T11:26:47.011Z",
+  "actions": [
+    "Forked workflow"
+  ],
+  "result": null
+}

@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-07-30T11:31:58.180Z",
+  "task": {
+    "description": "修复文章保存异常",
+    "project": "83912f76-759b-4bdf-b46d-560500c1f09d",
+    "priority": ""
+  },
+  "agent": {
+    "name": "code-mod-query",
+    "role": ""
+  },
+  "workflow": {
+    "name": "bug-fix",
+    "step": 3,
+    "totalSteps": 3,
+    "status": "running",
+    "currentAction": "run tests"
+  },
+  "session": {
+    "startedAt": "2026-07-30T11:26:47.010Z",
+    "duration": "5 min",
+    "toolCalls": 0,
+    "filesChanged": 0,
+    "commandsRun": 0
+  }
+}
