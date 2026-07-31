@@ -17,6 +17,7 @@ describe("Tool definitions", () => {
       "envInfo",
       "envInfoSafe",
       "frontendScanner",
+      "intentPlanner",
       "log",
       "migrateStatus",
       "makeController",

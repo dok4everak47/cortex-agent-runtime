@@ -28,6 +28,7 @@ import {
   executeApiGenerator,
 } from "./workflows/index.js"
 import { executeProjectContext } from "./tools/project-context.js"
+import { handleIntentPlanner } from "./planner/index.js"
 
 export type ToolHandler = (args: Record<string, unknown>) => ToolResult | Promise<ToolResult>
 
@@ -314,6 +315,18 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: [],
     },
   },
+  {
+    name: "intentPlanner",
+    description: "Parse a natural language development request, generate an execution plan, and optionally execute it",
+    inputSchema: {
+      type: "object",
+      properties: {
+        request: { type: "string", description: "Natural language request (e.g. '给博客增加评论功能')" },
+        dryRun: { type: "boolean", default: true, description: "If true, only show the plan without executing (default: true)" },
+      },
+      required: ["request"],
+    },
+  },
 ]
 
 export const toolHandlers: Record<string, ToolHandler> = {
@@ -339,6 +352,7 @@ export const toolHandlers: Record<string, ToolHandler> = {
   debugWorkflow: executeDebugWorkflow,
   apiGenerator: executeApiGenerator,
   projectContext: executeProjectContext,
+  intentPlanner: handleIntentPlanner,
 }
 
 export async function handleToolCall(name: string, args: Record<string, unknown>): Promise<ToolResult> {
