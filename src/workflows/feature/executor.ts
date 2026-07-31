@@ -1,5 +1,5 @@
 import { makeFeaturePlan, type FeatureOptions } from "./planner.js"
-import { runPlan } from "../run-plan.js"
+import { runPlan, type PlanRunResult } from "../run-plan.js"
 import * as migrationStep from "./steps/migration.js"
 import * as modelStep from "./steps/model.js"
 import * as controllerStep from "./steps/controller.js"
@@ -29,7 +29,13 @@ export async function executeFeaturePlan(
   fields: string | undefined,
   options: FeatureOptions,
   projectPath: string,
-): Promise<{ steps: Record<string, unknown>[]; testOutput: string }> {
+  resumeFrom?: string,
+): Promise<PlanRunResult> {
   const plan = makeFeaturePlan(entity, fields, options)
-  return runPlan(plan, STEP_REGISTRY, projectPath)
+  return runPlan(plan, STEP_REGISTRY, projectPath, {
+    workflow: "createFeature",
+    entity,
+    args: { entity, fields: fields ?? "", views: options.views, api: options.api },
+    resumeFrom,
+  })
 }

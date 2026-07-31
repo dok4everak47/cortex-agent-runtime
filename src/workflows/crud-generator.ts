@@ -13,12 +13,13 @@ export async function executeCrudGenerator(args: Record<string, unknown>) {
     const table = args.table ? String(args.table).trim() : undefined
     const { projectPath } = getConfig()
 
-    const { steps, testOutput } = await executePlan(entity, fields, table, projectPath)
+    const resumeFrom = args.resumeFrom ? String(args.resumeFrom) : undefined
+    const { steps, testOutput, runId, runStatus } = await executePlan(entity, fields, table, projectPath, resumeFrom)
 
     const doneCount = steps.filter(s => s.status === "done").length
     const summary = `Created ${entity} CRUD: ${doneCount} of ${steps.length} steps completed`
 
-    return success(JSON.stringify({ steps, testOutput, summary }, null, 2))
+    return success(JSON.stringify({ steps, testOutput, summary, runId, runStatus }, null, 2))
   } catch (err) {
     return failure("crudGenerator", err)
   }

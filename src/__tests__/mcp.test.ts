@@ -29,6 +29,7 @@ describe("Tool definitions", () => {
       "routeList",
       "runTest",
       "schema",
+      "workflowStatus",
     ].sort()
 
     assert.deepEqual(names, expected)

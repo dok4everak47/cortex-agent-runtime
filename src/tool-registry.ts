@@ -28,6 +28,7 @@ import {
   executeApiGenerator,
 } from "./workflows/index.js"
 import { executeProjectContext } from "./tools/project-context.js"
+import { executeWorkflowStatus } from "./tools/workflow-status.js"
 import { handleIntentPlanner } from "./planner/index.js"
 
 export type ToolHandler = (args: Record<string, unknown>) => ToolResult | Promise<ToolResult>
@@ -327,6 +328,18 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: ["request"],
     },
   },
+  {
+    name: "workflowStatus",
+    description: "List workflow runs, inspect a run, resume or rollback",
+    inputSchema: {
+      type: "object",
+      properties: {
+        action: { type: "string", enum: ["list", "get", "resume", "rollback"], default: "list", description: "Operation to perform (default: list)" },
+        runId: { type: "string", description: "Run ID (required for get/resume/rollback)" },
+      },
+      required: [],
+    },
+  },
 ]
 
 export const toolHandlers: Record<string, ToolHandler> = {
@@ -353,6 +366,7 @@ export const toolHandlers: Record<string, ToolHandler> = {
   apiGenerator: executeApiGenerator,
   projectContext: executeProjectContext,
   intentPlanner: handleIntentPlanner,
+  workflowStatus: executeWorkflowStatus,
 }
 
 export async function handleToolCall(name: string, args: Record<string, unknown>): Promise<ToolResult> {

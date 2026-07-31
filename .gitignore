@@ -5,5 +5,6 @@ dist/
 .DS_Store
 storage/
 .supervisor/
+.mcp/
 Laravel_MCP_Server_Product_Roadmap.md
 doc/

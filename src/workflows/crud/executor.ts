@@ -1,5 +1,5 @@
 import { makePlan } from "./planner.js"
-import { runPlan } from "../run-plan.js"
+import { runPlan, type PlanRunResult } from "../run-plan.js"
 import * as migrationStep from "./steps/migration.js"
 import * as modelStep from "./steps/model.js"
 import * as controllerStep from "./steps/controller.js"
@@ -21,7 +21,13 @@ export async function executePlan(
   fields: string | undefined,
   table: string | undefined,
   projectPath: string,
-): Promise<{ steps: Record<string, unknown>[]; testOutput: string }> {
+  resumeFrom?: string,
+): Promise<PlanRunResult> {
   const plan = makePlan(entity, fields, table)
-  return runPlan(plan, STEP_REGISTRY, projectPath)
+  return runPlan(plan, STEP_REGISTRY, projectPath, {
+    workflow: "crudGenerator",
+    entity,
+    args: { entity, fields: fields ?? "", table },
+    resumeFrom,
+  })
 }

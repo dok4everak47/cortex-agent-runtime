@@ -1,5 +1,5 @@
 import { makeApiPlan } from "./planner.js"
-import { runPlan } from "../run-plan.js"
+import { runPlan, type PlanRunResult } from "../run-plan.js"
 import * as migrationStep from "./steps/migration.js"
 import * as modelStep from "./steps/model.js"
 import * as apiControllerStep from "./steps/api-controller.js"
@@ -21,7 +21,13 @@ export async function executeApiPlan(
   fields: string | undefined,
   auth: boolean,
   projectPath: string,
-): Promise<{ steps: Record<string, unknown>[]; testOutput: string }> {
+  resumeFrom?: string,
+): Promise<PlanRunResult> {
   const plan = makeApiPlan(entity, fields, auth)
-  return runPlan(plan, STEP_REGISTRY, projectPath)
+  return runPlan(plan, STEP_REGISTRY, projectPath, {
+    workflow: "apiGenerator",
+    entity,
+    args: { entity, fields: fields ?? "", auth },
+    resumeFrom,
+  })
 }

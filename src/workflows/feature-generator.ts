@@ -14,12 +14,19 @@ export async function executeCreateFeature(args: Record<string, unknown>) {
     const api = args.api === true
     const { projectPath } = getConfig()
 
-    const { steps, testOutput } = await executeFeaturePlan(entity, fields, { views, api }, projectPath)
+    const resumeFrom = args.resumeFrom ? String(args.resumeFrom) : undefined
+    const { steps, testOutput, runId, runStatus } = await executeFeaturePlan(
+      entity,
+      fields,
+      { views, api },
+      projectPath,
+      resumeFrom,
+    )
 
     const doneCount = steps.filter(s => s.status === "done").length
     const summary = `Created ${entity} feature: ${doneCount} of ${steps.length} steps completed`
 
-    return success(JSON.stringify({ steps, testOutput, summary }, null, 2))
+    return success(JSON.stringify({ steps, testOutput, summary, runId, runStatus }, null, 2))
   } catch (err) {
     return failure("createFeature", err)
   }

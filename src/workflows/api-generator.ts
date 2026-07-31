@@ -13,12 +13,13 @@ export async function executeApiGenerator(args: Record<string, unknown>) {
     const auth = args.auth === true
     const { projectPath } = getConfig()
 
-    const { steps, testOutput } = await executeApiPlan(entity, fields, auth, projectPath)
+    const resumeFrom = args.resumeFrom ? String(args.resumeFrom) : undefined
+    const { steps, testOutput, runId, runStatus } = await executeApiPlan(entity, fields, auth, projectPath, resumeFrom)
 
     const doneCount = steps.filter(s => s.status === "done").length
     const summary = `Created ${entity} API: ${doneCount} of ${steps.length} steps completed`
 
-    return success(JSON.stringify({ steps, testOutput, summary }, null, 2))
+    return success(JSON.stringify({ steps, testOutput, summary, runId, runStatus }, null, 2))
   } catch (err) {
     return failure("apiGenerator", err)
   }

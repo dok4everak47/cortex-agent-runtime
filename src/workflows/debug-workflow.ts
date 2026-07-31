@@ -18,10 +18,11 @@ export async function executeDebugWorkflow(args: Record<string, unknown>) {
     const file = args.file ? String(args.file).trim() : undefined
     const { projectPath } = getConfig()
 
-    const { steps, context } = await executeDebugPlan(error, file, projectPath)
+    const resumeFrom = args.resumeFrom ? String(args.resumeFrom) : undefined
+    const { steps, context, runId, runStatus } = await executeDebugPlan(error, file, projectPath, resumeFrom)
     const report = buildReport(context)
 
-    return success(JSON.stringify({ error, report, steps }, null, 2))
+    return success(JSON.stringify({ error, report, steps, runId, runStatus }, null, 2))
   } catch (err) {
     return failure("debugWorkflow", err)
   }
