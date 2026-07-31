@@ -26,6 +26,13 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that ex
 
 ## Usage
 
+### Installation
+
+```bash
+# From GitHub (demo version)
+npm install github:dok4everak47/laravel-mcp-server
+```
+
 ### With OpenCode
 
 Add to `~/.config/opencode/opencode.jsonc`:
