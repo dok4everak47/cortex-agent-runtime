@@ -6,11 +6,14 @@ describe("Tool definitions", () => {
   it("has all expected tools registered", () => {
     const names = TOOL_DEFINITIONS.map((t) => t.name).sort()
     const expected = [
+      "apiGenerator",
       "artisan",
       "cache",
       "composerAnalyzer",
       "configGet",
+      "createFeature",
       "crudGenerator",
+      "debugWorkflow",
       "envInfo",
       "envInfoSafe",
       "frontendScanner",

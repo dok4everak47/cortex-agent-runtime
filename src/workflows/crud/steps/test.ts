@@ -3,7 +3,7 @@ import { join } from "path"
 import { runArtisan } from "../../../mcp.js"
 import type { FieldDef, StepResult } from "../planner.js"
 
-function getTestValue(field: FieldDef): string {
+export function getTestValue(field: FieldDef): string {
   switch (field.type) {
     case "integer": return "1"
     case "boolean": return "true"
@@ -14,7 +14,7 @@ function getTestValue(field: FieldDef): string {
   }
 }
 
-function getTableColumnsFromMigrations(projectPath: string, table: string): string[] {
+export function getTableColumnsFromMigrations(projectPath: string, table: string): string[] {
   const dir = join(projectPath, "database", "migrations")
   if (!existsSync(dir)) return []
   const cols: string[] = []

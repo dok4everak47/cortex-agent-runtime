@@ -1,27 +1,27 @@
-import { makePlan } from "./planner.js"
+import { makeApiPlan } from "./planner.js"
 import { runPlan } from "../run-plan.js"
 import * as migrationStep from "./steps/migration.js"
 import * as modelStep from "./steps/model.js"
-import * as controllerStep from "./steps/controller.js"
+import * as apiControllerStep from "./steps/api-controller.js"
 import * as requestStep from "./steps/request.js"
-import * as routeStep from "./steps/route.js"
+import * as apiRouteStep from "./steps/api-route.js"
 import * as testStep from "./steps/test.js"
 
 const STEP_REGISTRY = {
   migration: migrationStep,
   model: modelStep,
-  controller: controllerStep,
+  apiController: apiControllerStep,
   request: requestStep,
-  route: routeStep,
+  apiRoute: apiRouteStep,
   test: testStep,
 }
 
-export async function executePlan(
+export async function executeApiPlan(
   entity: string,
   fields: string | undefined,
-  table: string | undefined,
+  auth: boolean,
   projectPath: string,
 ): Promise<{ steps: Record<string, unknown>[]; testOutput: string }> {
-  const plan = makePlan(entity, fields, table)
+  const plan = makeApiPlan(entity, fields, auth)
   return runPlan(plan, STEP_REGISTRY, projectPath)
 }

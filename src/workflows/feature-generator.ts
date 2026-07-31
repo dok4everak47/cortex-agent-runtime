@@ -1,0 +1,26 @@
+import { getConfig } from "../mcp.js"
+import { success, failure } from "../tool-helper.js"
+import { executeFeaturePlan } from "./feature/executor.js"
+
+export async function executeCreateFeature(args: Record<string, unknown>) {
+  try {
+    const entity = String(args.entity ?? "").trim()
+    if (!entity) {
+      return failure("createFeature", new Error("'entity' argument is required"))
+    }
+
+    const fields = String(args.fields ?? "")
+    const views = args.views !== false
+    const api = args.api === true
+    const { projectPath } = getConfig()
+
+    const { steps, testOutput } = await executeFeaturePlan(entity, fields, { views, api }, projectPath)
+
+    const doneCount = steps.filter(s => s.status === "done").length
+    const summary = `Created ${entity} feature: ${doneCount} of ${steps.length} steps completed`
+
+    return success(JSON.stringify({ steps, testOutput, summary }, null, 2))
+  } catch (err) {
+    return failure("createFeature", err)
+  }
+}

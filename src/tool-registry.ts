@@ -21,7 +21,12 @@ import { executeMakeController } from "./tools/make-controller.js"
 import { executeMakeMigration } from "./tools/make-migration.js"
 import { executeMigrationAnalyzer } from "./tools/migration-analyzer.js"
 import { executeComposerAnalyzer } from "./tools/composer-analyzer.js"
-import { executeCrudGenerator } from "./workflows/crud-generator.js"
+import {
+  executeCrudGenerator,
+  executeCreateFeature,
+  executeDebugWorkflow,
+  executeApiGenerator,
+} from "./workflows/index.js"
 import { executeProjectContext } from "./tools/project-context.js"
 
 export type ToolHandler = (args: Record<string, unknown>) => ToolResult | Promise<ToolResult>
@@ -260,6 +265,45 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: "createFeature",
+    description: "Generate complete Laravel feature: migration, model, controller, requests, routes, blade views, tests",
+    inputSchema: {
+      type: "object",
+      properties: {
+        entity: { type: "string", description: "Entity name in singular (e.g. 'Post', 'Category')" },
+        fields: { type: "string", description: "Comma-separated field definitions (e.g. 'title:string,content:text')" },
+        views: { type: "boolean", default: true, description: "Whether to generate Blade views (default: true)" },
+        api: { type: "boolean", default: false, description: "Generate an API controller instead of web controller (default: false)" },
+      },
+      required: ["entity"],
+    },
+  },
+  {
+    name: "debugWorkflow",
+    description: "Analyze a Laravel error: locate file, read context, diagnose common issues, suggest fixes",
+    inputSchema: {
+      type: "object",
+      properties: {
+        error: { type: "string", description: "Error message or stack trace" },
+        file: { type: "string", description: "Optional: specific file to analyze" },
+      },
+      required: ["error"],
+    },
+  },
+  {
+    name: "apiGenerator",
+    description: "Generate REST API for a Laravel entity: migration, model, API controller, routes, tests",
+    inputSchema: {
+      type: "object",
+      properties: {
+        entity: { type: "string", description: "Entity name in singular (e.g. 'Post', 'Category')" },
+        fields: { type: "string", description: "Comma-separated field definitions (e.g. 'title:string,content:text')" },
+        auth: { type: "boolean", default: false, description: "Protect routes with auth:sanctum middleware" },
+      },
+      required: ["entity"],
+    },
+  },
+  {
     name: "projectContext",
     description: "Get comprehensive Laravel project context (version, models, routes, packages, structure)",
     inputSchema: {
@@ -291,6 +335,9 @@ export const toolHandlers: Record<string, ToolHandler> = {
   migrationAnalyzer: executeMigrationAnalyzer,
   composerAnalyzer: executeComposerAnalyzer,
   crudGenerator: executeCrudGenerator,
+  createFeature: executeCreateFeature,
+  debugWorkflow: executeDebugWorkflow,
+  apiGenerator: executeApiGenerator,
   projectContext: executeProjectContext,
 }
 

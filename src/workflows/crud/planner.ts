@@ -36,7 +36,7 @@ export function snakeCase(name: string): string {
   return name.replace(/([A-Z])/g, "_$1").toLowerCase().replace(/^_/, "")
 }
 
-function toPascalCase(name: string): string {
+export function toPascalCase(name: string): string {
   if (!name) return name
   return name.charAt(0).toUpperCase() + name.slice(1)
 }
