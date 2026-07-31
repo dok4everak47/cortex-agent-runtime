@@ -5,6 +5,8 @@ export type PlannedAction =
   | "add_relation"
   | "add_policy"
   | "add_test"
+  | "enhance"
+  | "fix_bug"
   | "debug"
 
 export type RelationType = "hasMany" | "belongsTo" | "belongsToMany" | "hasOne"
@@ -20,6 +22,7 @@ export type Intent = {
   entity: string
   table?: string
   fields?: string
+  target?: string
   options: {
     views?: boolean
     api?: boolean
@@ -28,6 +31,7 @@ export type Intent = {
   }
   confidence: number
   raw: string
+  summary?: string
 }
 
 export type PlanStep = {

@@ -2,22 +2,26 @@ import type { Intent, PlannedAction, Relation, RelationType } from "./plan-schem
 
 const ACTION_PATTERNS: Array<{ pattern: RegExp; action: PlannedAction; confidence: number }> = [
   { pattern: /(增加|添加|创建|新建|加|create|add|make)\S*\s*(.{0,30}?)(功能|feature)/i, action: "create_feature", confidence: 0.8 },
+  { pattern: /(增强|优化|改造|重构|提升|improve|enhance)/i, action: "enhance", confidence: 0.6 },
   { pattern: /(crud|增删改查)/i, action: "create_crud", confidence: 0.9 },
   { pattern: /(api|接口|rest)/i, action: "create_api", confidence: 0.85 },
   { pattern: /(关系|关联|多对多|一对多|多对一|一对一带|belongs)/i, action: "add_relation", confidence: 0.85 },
   { pattern: /(权限|策略|policy|authorize)/i, action: "add_policy", confidence: 0.8 },
   { pattern: /(测试|test)/i, action: "add_test", confidence: 0.7 },
-  { pattern: /(报错|错误|异常|debug|修复|修一下|解决)/i, action: "debug", confidence: 0.8 },
+  { pattern: /(修复|fix\s*bug|bugfix)/i, action: "fix_bug", confidence: 0.7 },
+  { pattern: /(报错|错误|异常|debug|修一下|解决)/i, action: "debug", confidence: 0.8 },
 ]
 
 const ACTION_KEYWORDS: Record<PlannedAction, RegExp> = {
   create_feature: /功能|feature/i,
+  enhance: /增强|优化|改造|重构|提升|improve|enhance/i,
   create_crud: /crud|增删改查/i,
   create_api: /api|接口|rest/i,
   add_relation: /关系|关联|多对多|一对多|多对一|belongs/i,
   add_policy: /权限|策略|policy|authorize/i,
   add_test: /测试|test/i,
-  debug: /报错|错误|异常|debug|修复|修一下|解决/i,
+  fix_bug: /修复|fix\s*bug|bugfix/i,
+  debug: /报错|错误|异常|debug|修一下|解决/i,
 }
 
 const ENTITY_MAP: Record<string, string> = {
@@ -183,4 +187,8 @@ export function parseIntent(input: string): Intent {
     confidence,
     raw,
   }
+}
+
+export function parseIntentRuleBased(input: string): Intent {
+  return parseIntent(input)
 }

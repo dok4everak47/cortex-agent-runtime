@@ -114,6 +114,9 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 |----------|---------|-------------|
 | `LARAVEL_PROJECT_PATH` | `process.cwd()` | Path to Laravel project |
 | `PHP_PATH` | `php` | PHP executable path |
+| `LLM_API_KEY` | *(empty)* | Enables the LLM semantic layer for `intentPlanner` (e.g. DeepSeek/OpenAI key) |
+| `LLM_BASE_URL` | `https://api.deepseek.com/v1` | OpenAI-compatible API base URL |
+| `LLM_MODEL` | `deepseek-chat` | LLM model used for intent analysis |
 
 ## Requirements
 
@@ -136,7 +139,7 @@ npm run dev         # npx tsx src/index.ts (hot reload)
 
 ✓ **Local only** — runs entirely on your machine, no server component
 ✓ **No telemetry** — sends zero usage data
-✓ **No external API** — no network calls, works offline
+✓ **No external API by default** — works fully offline; the LLM semantic layer only makes network calls when `LLM_API_KEY` is set
 ✓ **Command whitelist** — artisan restricted to safe commands
 ✓ **Dangerous commands blocked** — db:wipe, migrate:fresh, tinker, shell
 ✓ **Sensitive data redaction** — .env values filtered before returning

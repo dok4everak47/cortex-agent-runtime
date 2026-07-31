@@ -1,4 +1,4 @@
-import { contextManager } from "../context/index.js"
+import { contextManager } from "../context/context-manager.js"
 import type { ProjectContext } from "../context/types.js"
 import { parseFields, pluralize, snakeCase, toPascalCase } from "../workflows/crud/planner.js"
 import type { Intent, Plan, PlanStep, PlannedAction, RelationType } from "./plan-schema.js"
@@ -118,6 +118,15 @@ function buildSteps(intent: Intent, ctx: ProjectContext): PlanStep[] {
       return policySteps(intent)
     case "add_test":
       return [step(1, "test", action, { entityPascal: b.entityPascal, entitySnake: b.entitySnake, entityPlural: b.entityPlural, table: b.table, fields: b.fields })]
+    case "enhance": {
+      const file = entity ? `app/Http/Controllers/${b.entityPascal}.php` : undefined
+      return [
+        step(1, "analyze", action, { file, hint: intent.target, request: intent.raw }, { optional: true }),
+        step(2, "suggest", action, { entity, target: intent.target, summary: intent.summary }, { dependsOn: [1] }),
+      ]
+    }
+    case "fix_bug":
+      return debugSteps(intent)
     case "debug":
       return debugSteps(intent)
   }
@@ -165,6 +174,15 @@ function buildSummary(intent: Intent, ctx: ProjectContext): string {
       break
     case "add_test":
       text = `将为 ${entity} 添加测试。`
+      break
+    case "enhance": {
+      const target = intent.target ? `（${intent.target}）` : ""
+      text = `将增强 ${entity || "现有功能"}${target}：定位 → 分析现有实现 → 输出修改建议（不新建文件，共 2 步）。`
+      if (intent.summary) notes.push(`语义层说明：${intent.summary}`)
+      break
+    }
+    case "fix_bug":
+      text = `将修复 bug：定位 → 分析 → 诊断 → 建议（共 4 步）。`
       break
     case "debug":
       text = `将运行调试工作流：定位 → 分析 → 诊断 → 建议（共 4 步）。`
