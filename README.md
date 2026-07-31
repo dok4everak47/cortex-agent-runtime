@@ -114,6 +114,17 @@ npm start           # node dist/index.js
 npm run dev         # npx tsx src/index.ts (hot reload)
 ```
 
+## Security Model
+
+✓ **Local only** — runs entirely on your machine, no server component
+✓ **No telemetry** — sends zero usage data
+✓ **No external API** — no network calls, works offline
+✓ **Command whitelist** — artisan restricted to safe commands
+✓ **Dangerous commands blocked** — db:wipe, migrate:fresh, tinker, shell
+✓ **Sensitive data redaction** — .env values filtered before returning
+
+See [SECURITY.md](./SECURITY.md) for details.
+
 ## License
 
 MIT
