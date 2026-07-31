@@ -1,43 +1,20 @@
 import { getLogger } from "../mcp.js"
-import { buildContext } from "./builder.js"
-import { CACHE_TTL_MS, readCache, writeCache, isExpired } from "./cache.js"
+import { getContext as buildModuleContext } from "./builder.js"
+import { clearModuleCacheDir } from "./module-cache.js"
 import type { ProjectContext } from "./types.js"
 
-interface CacheEntry {
-  ctx: ProjectContext
-  ts: number
-}
-
 export class ContextManager {
-  private memory = new Map<string, CacheEntry>()
-
   async getContext(projectPath: string, force = false): Promise<ProjectContext> {
-    const logger = getLogger()
-
-    if (!force) {
-      const mem = this.memory.get(projectPath)
-      if (mem && Date.now() - mem.ts < CACHE_TTL_MS) {
-        logger.debug("context served from memory cache", { projectPath })
-        return { ...mem.ctx, source: "cache" }
-      }
-
-      const disk = readCache(projectPath)
-      if (disk && !isExpired(disk)) {
-        this.memory.set(projectPath, { ctx: disk, ts: Date.now() })
-        logger.debug("context served from disk cache", { projectPath })
-        return { ...disk, source: "cache" }
-      }
+    if (force) {
+      clearModuleCacheDir(projectPath)
+      getLogger().debug("forced context rebuild", { projectPath })
     }
-
-    logger.debug("building fresh context", { projectPath, force })
-    const fresh = await buildContext(projectPath)
-    writeCache(projectPath, fresh)
-    this.memory.set(projectPath, { ctx: fresh, ts: Date.now() })
-    return fresh
+    return buildModuleContext(projectPath)
   }
 
   invalidate(projectPath: string): void {
-    this.memory.delete(projectPath)
+    clearModuleCacheDir(projectPath)
+    getLogger().debug("context modules invalidated", { projectPath })
   }
 }
 

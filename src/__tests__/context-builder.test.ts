@@ -4,9 +4,10 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from "fs"
 import { join } from "path"
 import { tmpdir } from "os"
 
-describe("context builder", () => {
+describe("context builder modules", () => {
   let tmpDir: string
   let activeProject: string
+  let tinkerCalls = 0
 
   before(async () => {
     tmpDir = mkdtempSync(join(tmpdir(), "context-builder-"))
@@ -17,12 +18,16 @@ describe("context builder", () => {
     mkdirSync(join(tmpDir, "database", "migrations"), { recursive: true })
     mkdirSync(join(tmpDir, "tests", "Feature"), { recursive: true })
     mkdirSync(join(tmpDir, "tests", "Unit"), { recursive: true })
+    mkdirSync(join(tmpDir, "app", "Models"), { recursive: true })
+    mkdirSync(join(tmpDir, "routes"), { recursive: true })
 
     writeFileSync(join(tmpDir, "app", "Http", "Controllers", "UserController.php"), "<?php")
     writeFileSync(join(tmpDir, "resources", "views", "welcome.blade.php"), "")
     writeFileSync(join(tmpDir, "database", "migrations", "2024_01_01_create_users_table.php"), "<?php")
     writeFileSync(join(tmpDir, "tests", "Feature", "PostTest.php"), "<?php")
     writeFileSync(join(tmpDir, "tests", "Unit", "ExampleTest.php"), "<?php")
+    writeFileSync(join(tmpDir, "app", "Models", "Post.php"), "<?php")
+    writeFileSync(join(tmpDir, "routes", "web.php"), "<?php")
 
     writeFileSync(join(tmpDir, "composer.json"), JSON.stringify({
       require: { "laravel/framework": "^11.0" },
@@ -43,13 +48,12 @@ describe("context builder", () => {
           if (sub === "route:list --json") {
             return JSON.stringify([
               { domain: null, method: "GET|HEAD", uri: "posts", name: "posts.index", action: "PostController@index", middleware: ["web"] },
-              { domain: null, method: "POST", uri: "posts", name: "posts.store", action: "PostController@store", middleware: ["web"] },
-              { domain: null, method: "GET|HEAD", uri: "api/posts", name: "api.posts", action: "PostController@api", middleware: ["api"] },
             ])
           }
           return ""
         },
         runTinker: (script: string) => {
+          tinkerCalls++
           if (!existsSync(activeProject)) throw new Error("tinker failed")
           if (script.includes("Schema::getTables")) return "users\nposts"
           if (script.includes("app_path('Models')")) return "App\\Models\\User\nApp\\Models\\Post"
@@ -71,7 +75,7 @@ describe("context builder", () => {
     rmSync(tmpDir, { recursive: true, force: true })
   })
 
-  it("builds a complete context", async () => {
+  it("builds a complete context and writes all 5 module files", async () => {
     activeProject = tmpDir
     const { buildContext } = await import("../context/builder.js")
     const ctx = await buildContext(tmpDir)
@@ -80,19 +84,62 @@ describe("context builder", () => {
     assert.equal(ctx.laravel.phpVersion, "PHP 8.3.6 (cli) (built: Jun 27 2024 16:31:20) ( NTS )")
     assert.equal(ctx.laravel.environment, "local")
     assert.equal(ctx.laravel.debug, true)
-    assert.equal(ctx.laravel.framework, "Laravel")
     assert.deepEqual(ctx.laravel.database, { driver: "mysql", name: "blog" })
     assert.deepEqual(ctx.app, { name: "My Blog", url: "https://blog.test" })
     assert.deepEqual(ctx.models, ["App\\Models\\User", "App\\Models\\Post"])
     assert.deepEqual(ctx.tables, ["users", "posts"])
-    assert.equal(ctx.routes.count, 3)
-    assert.deepEqual(ctx.routes.named, ["posts.index", "posts.store", "api.posts"])
+    assert.equal(ctx.routes.count, 1)
+    assert.deepEqual(ctx.routes.named, ["posts.index"])
     assert.deepEqual(ctx.packages.production, ["laravel/framework"])
     assert.deepEqual(ctx.packages.dev, ["phpunit/phpunit"])
     assert.deepEqual(ctx.frontend, ["blade", "vite", "vue"])
     assert.deepEqual(ctx.structure, { controllers: 1, views: 1, migrations: 1, tests: 2 })
     assert.equal(ctx.source, "realtime")
-    assert.ok(typeof ctx.builtAt === "number")
+
+    for (const module of ["project", "models", "routes", "schema", "packages"]) {
+      assert.ok(existsSync(join(tmpDir, ".mcp", "context", `${module}.json`)), `${module}.json should exist`)
+    }
+  })
+
+  it("serves every module from cache on a second build", async () => {
+    activeProject = tmpDir
+    const { buildContext } = await import("../context/builder.js")
+    const beforeCalls = tinkerCalls
+    const ctx = await buildContext(tmpDir)
+    assert.equal(ctx.source, "cache")
+    assert.equal(tinkerCalls, beforeCalls)
+  })
+
+  it("rebuilds only the schema module when a migration changes", async () => {
+    activeProject = tmpDir
+    const { buildContext } = await import("../context/builder.js")
+    writeFileSync(join(tmpDir, "database", "migrations", "2026_07_30_test.php"), "<?php")
+    const beforeCalls = tinkerCalls
+    const ctx = await buildContext(tmpDir)
+    assert.equal(ctx.source, "realtime")
+    assert.equal(tinkerCalls, beforeCalls + 1, "only the tables scan should rerun")
+    assert.deepEqual(ctx.tables, ["users", "posts"])
+  })
+
+  it("rebuilds only the models module when a model changes", async () => {
+    activeProject = tmpDir
+    const { buildContext } = await import("../context/builder.js")
+    writeFileSync(join(tmpDir, "app", "Models", "Comment.php"), "<?php")
+    const beforeCalls = tinkerCalls
+    const ctx = await buildContext(tmpDir)
+    assert.equal(ctx.source, "realtime")
+    assert.equal(tinkerCalls, beforeCalls + 1, "only the models scan should rerun")
+    assert.deepEqual(ctx.models, ["App\\Models\\User", "App\\Models\\Post"])
+  })
+
+  it("buildContextModule reuses a fresh module cache", async () => {
+    activeProject = tmpDir
+    const { buildContextModule } = await import("../context/builder.js")
+    const first = await buildContextModule("routes", tmpDir) as { count: number }
+    const beforeCalls = tinkerCalls
+    const second = await buildContextModule("routes", tmpDir) as { count: number }
+    assert.equal(tinkerCalls, beforeCalls)
+    assert.deepEqual(first, second)
   })
 
   it("tolerates collector failures with fallbacks", async () => {

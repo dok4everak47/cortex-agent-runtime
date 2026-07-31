@@ -6,7 +6,23 @@ import { scanModels } from "../tools/model.js"
 import { scanTables } from "../tools/schema.js"
 import { collectRoutes } from "../tools/route-list.js"
 import { detectFrontend } from "../tools/frontend-scanner.js"
+import { clearLegacyCache, ModuleCache, type ModuleName } from "./module-cache.js"
 import type { ProjectContext } from "./types.js"
+
+const MODULES: ModuleName[] = ["project", "models", "routes", "schema", "packages"]
+
+export type ProjectModule = {
+  laravel: ProjectContext["laravel"]
+  app: ProjectContext["app"]
+}
+
+export type ModuleDataMap = {
+  project: ProjectModule
+  models: ProjectContext["models"]
+  routes: ProjectContext["routes"]
+  schema: ProjectContext["tables"]
+  packages: ProjectContext["packages"]
+}
 
 function safe<T>(name: string, fn: () => T, fallback: T): T {
   try {
@@ -111,14 +127,6 @@ async function collectAppInfo(): Promise<{ name: string; url: string }> {
   }, { name: "", url: "" })
 }
 
-async function collectModels(): Promise<string[]> {
-  return safe("models", () => scanModels(), [])
-}
-
-async function collectTables(): Promise<string[]> {
-  return safe("tables", () => scanTables(), [])
-}
-
 async function collectRoutesStats(): Promise<ProjectContext["routes"]> {
   return safe("routes", () => {
     const routes = collectRoutes()
@@ -139,16 +147,6 @@ async function collectRoutesStats(): Promise<ProjectContext["routes"]> {
   }, { count: 0, named: [], groups: [] })
 }
 
-async function collectPackages(projectPath: string): Promise<{ production: string[]; dev: string[] }> {
-  return safe("packages", () => {
-    const { packages } = analyzeComposer(projectPath, { dev: true })
-    return {
-      production: packages.filter((p) => p.type === "production").map((p) => p.name),
-      dev: packages.filter((p) => p.type === "dev").map((p) => p.name),
-    }
-  }, { production: [], dev: [] })
-}
-
 async function collectFrontend(projectPath: string): Promise<string[]> {
   return safe("frontend", () => detectFrontend(projectPath), [])
 }
@@ -162,9 +160,7 @@ async function collectStructure(projectPath: string): Promise<ProjectContext["st
   }), { controllers: 0, views: 0, migrations: 0, tests: 0 })
 }
 
-export async function buildContext(projectPath: string): Promise<ProjectContext> {
-  getLogger().info("building project context", { projectPath })
-
+async function buildProjectModule(projectPath: string): Promise<ProjectModule> {
   const [
     laravelVersion,
     phpVersion,
@@ -173,12 +169,6 @@ export async function buildContext(projectPath: string): Promise<ProjectContext>
     database,
     framework,
     appInfo,
-    models,
-    tables,
-    routes,
-    packages,
-    frontend,
-    structure,
   ] = await Promise.all([
     collectLaravelVersion(),
     collectPhpVersion(),
@@ -187,41 +177,134 @@ export async function buildContext(projectPath: string): Promise<ProjectContext>
     collectDatabase(),
     collectFramework(projectPath),
     collectAppInfo(),
-    collectModels(),
-    collectTables(),
-    collectRoutesStats(),
-    collectPackages(projectPath),
+  ])
+
+  return {
+    laravel: { version: laravelVersion, phpVersion, environment, debug, database, framework },
+    app: appInfo,
+  }
+}
+
+async function buildModelsModule(): Promise<ModuleDataMap["models"]> {
+  return safe("models", () => scanModels(), [])
+}
+
+async function buildRoutesModule(): Promise<ModuleDataMap["routes"]> {
+  return collectRoutesStats()
+}
+
+async function buildSchemaModule(): Promise<ModuleDataMap["schema"]> {
+  return safe("tables", () => scanTables(), [])
+}
+
+async function buildPackagesModule(projectPath: string): Promise<ModuleDataMap["packages"]> {
+  return safe("packages", () => {
+    const { packages } = analyzeComposer(projectPath, { dev: true })
+    return {
+      production: packages.filter((p) => p.type === "production").map((p) => p.name),
+      dev: packages.filter((p) => p.type === "dev").map((p) => p.name),
+    }
+  }, { production: [], dev: [] })
+}
+
+async function buildModule(module: ModuleName, projectPath: string): Promise<unknown> {
+  switch (module) {
+    case "project":
+      return buildProjectModule(projectPath)
+    case "models":
+      return buildModelsModule()
+    case "routes":
+      return buildRoutesModule()
+    case "schema":
+      return buildSchemaModule()
+    case "packages":
+      return buildPackagesModule(projectPath)
+  }
+}
+
+function collectModuleDeps(cache: ModuleCache, module: ModuleName): Record<string, number> {
+  switch (module) {
+    case "project":
+      return cache.collectDeps(["artisan", ".env", "composer.json"])
+    case "models":
+      return cache.collectDeps(["app/Models/**/*.php"])
+    case "routes":
+      return cache.collectDeps(["routes/*.php"])
+    case "schema":
+      return cache.collectDeps(["database/migrations/*.php", "database/migrations"])
+    case "packages":
+      return cache.collectDeps(["composer.json", "composer.lock"])
+  }
+}
+
+interface LoadedModule {
+  data: unknown
+  hit: boolean
+}
+
+async function loadModule(cache: ModuleCache, module: ModuleName, projectPath: string): Promise<LoadedModule> {
+  const deps = collectModuleDeps(cache, module)
+  const cached = cache.get<unknown>(module)
+  if (cached && cache.isFresh(cached, deps)) {
+    getLogger().debug("context module cache hit", { module, projectPath })
+    return { data: cached.data, hit: true }
+  }
+
+  getLogger().debug("building context module", { module, projectPath })
+  const data = await buildModule(module, projectPath)
+  cache.set(module, data, deps)
+  return { data, hit: false }
+}
+
+/** Build (or reuse from cache) a single context module. */
+export async function buildContextModule(module: ModuleName, projectPath: string): Promise<unknown> {
+  const cache = new ModuleCache(projectPath)
+  const { data } = await loadModule(cache, module, projectPath)
+  return data
+}
+
+/** Aggregate all modules into a full ProjectContext, each module using its own cache. */
+export async function getContext(projectPath: string): Promise<ProjectContext> {
+  clearLegacyCache(projectPath)
+
+  const cache = new ModuleCache(projectPath)
+  const results = await Promise.all(MODULES.map((module) => loadModule(cache, module, projectPath)))
+
+  const [project, models, routes, schema, packages] = results.map((r) => r.data) as [
+    ProjectModule,
+    ModuleDataMap["models"],
+    ModuleDataMap["routes"],
+    ModuleDataMap["schema"],
+    ModuleDataMap["packages"],
+  ]
+
+  const [frontend, structure] = await Promise.all([
     collectFrontend(projectPath),
     collectStructure(projectPath),
   ])
 
   const ctx: ProjectContext = {
-    laravel: {
-      version: laravelVersion,
-      phpVersion,
-      environment,
-      debug,
-      database,
-      framework,
-    },
-    app: appInfo,
+    laravel: project.laravel,
+    app: project.app,
     models,
-    tables,
+    tables: schema,
     routes,
     packages,
     frontend,
     structure,
     builtAt: Date.now(),
-    source: "realtime",
+    source: results.every((r) => r.hit) ? "cache" : "realtime",
   }
 
-  getLogger().info("project context built", {
+  getLogger().info("project context assembled", {
     projectPath,
     models: models.length,
-    tables: tables.length,
+    tables: schema.length,
     routes: routes.count,
     source: ctx.source,
   })
 
   return ctx
 }
+
+export const buildContext = getContext
