@@ -6,12 +6,14 @@ import {
 } from "@modelcontextprotocol/sdk/types.js"
 import { TOOL_DEFINITIONS, handleToolCall } from "./tool-registry.js"
 import { getLogger } from "./mcp.js"
+import { contextManager } from "./context/index.js"
+import { registerContextResource } from "./context/resource.js"
 
 const logger = getLogger()
 
 const server = new Server(
   { name: "laravel-mcp-server", version: "0.1.0" },
-  { capabilities: { tools: {} } },
+  { capabilities: { tools: {}, resources: {} } },
 )
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -23,6 +25,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params
   return handleToolCall(name, args ?? {})
 })
+
+registerContextResource(server, (projectPath) => contextManager.getContext(projectPath))
 
 const transport = new StdioServerTransport()
 await server.connect(transport)

@@ -44,14 +44,18 @@ describe("envInfoSafe", () => {
     assert.ok(result.content[0].text.includes("SESSION_DRIVER=file"))
   })
 
-  it("removes APP_KEY, DB_PASSWORD, and SECRET values", async () => {
+  it("redacts APP_KEY, DB_PASSWORD, and SECRET values", async () => {
     const { executeEnvInfoSafe } = await import("../tools/env-info-safe.js")
     const result = executeEnvInfoSafe()
     assert.equal(result.isError, false)
-    assert.ok(!result.content[0].text.includes("APP_KEY"))
-    assert.ok(!result.content[0].text.includes("DB_PASSWORD"))
-    assert.ok(!result.content[0].text.includes("MAIL_PASSWORD"))
-    assert.ok(!result.content[0].text.includes("STRIPE_SECRET"))
+    assert.ok(result.content[0].text.includes("APP_KEY=[REDACTED]"))
+    assert.ok(result.content[0].text.includes("DB_PASSWORD=[REDACTED]"))
+    assert.ok(result.content[0].text.includes("MAIL_PASSWORD=[REDACTED]"))
+    assert.ok(result.content[0].text.includes("STRIPE_SECRET=[REDACTED]"))
+    assert.ok(!result.content[0].text.includes("base64:abc123"))
+    assert.ok(!result.content[0].text.includes("secret"))
+    assert.ok(!result.content[0].text.includes("pass123"))
+    assert.ok(!result.content[0].text.includes("sk_test_xxx"))
   })
 
   it("returns error when .env file is missing", async () => {

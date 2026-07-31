@@ -2,23 +2,7 @@ import { readFileSync, existsSync } from "fs"
 import { join } from "path"
 import { getConfig } from "../mcp.js"
 import { success, failure } from "../tool-helper.js"
-
-const SENSITIVE_PATTERNS = [
-  "APP_KEY",
-  "DB_PASSWORD",
-  "_TOKEN",
-  "_SECRET",
-  "_KEY",
-  "PASSWORD",
-  "SECRET",
-]
-
-function isSensitiveLine(line: string): boolean {
-  const trimmed = line.trim()
-  if (!trimmed || trimmed.startsWith("#")) return false
-  const key = trimmed.split("=", 1)[0].trim()
-  return SENSITIVE_PATTERNS.some((pattern) => key.toUpperCase().includes(pattern))
-}
+import { redactText } from "../security/redactor.js"
 
 export function executeEnvInfoSafe() {
   try {
@@ -30,10 +14,7 @@ export function executeEnvInfoSafe() {
     }
 
     const content = readFileSync(envPath, "utf-8")
-    const lines = content.split("\n")
-    const filtered = lines.filter((line) => !isSensitiveLine(line))
-
-    return success(filtered.join("\n"))
+    return success(redactText(content))
   } catch (err) {
     return failure("envInfoSafe", err)
   }

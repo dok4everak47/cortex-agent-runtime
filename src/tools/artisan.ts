@@ -1,31 +1,12 @@
 import { runArtisan } from "../mcp.js"
 import { success, failure } from "../tool-helper.js"
+import { defaultPolicy } from "../security/policy.js"
+import { validateArguments } from "../security/command-validator.js"
 
-export const ALLOWED_ARTISAN_COMMANDS = [
-  "make:model",
-  "make:controller",
-  "make:migration",
-  "make:factory",
-  "make:seeder",
-  "make:request",
-  "make:test",
-  "make:policy",
-  "migrate",
-  "migrate:status",
-  "migrate:rollback",
-  "route:list",
-  "cache:clear",
-  "config:clear",
-  "config:get",
-  "view:clear",
-  "optimize:clear",
-  "test",
-  "env",
-]
+export const ALLOWED_ARTISAN_COMMANDS = defaultPolicy.getAllowedCommands()
 
 export function isArtisanAllowed(command: string): boolean {
-  const base = command.trim().split(/\s+/)[0]
-  return ALLOWED_ARTISAN_COMMANDS.includes(base)
+  return defaultPolicy.evaluate(command).allowed
 }
 
 export function executeArtisan(args: Record<string, unknown>) {
@@ -35,8 +16,14 @@ export function executeArtisan(args: Record<string, unknown>) {
       return failure("artisan", new Error("'command' argument is required"))
     }
 
-    if (!isArtisanAllowed(command)) {
+    const decision = defaultPolicy.evaluate(command)
+    if (!decision.allowed) {
       return failure("artisan", new Error(`command '${command.trim().split(/\s+/)[0]}' is not allowed. Allowed commands: ${ALLOWED_ARTISAN_COMMANDS.join(", ")}`))
+    }
+
+    const argCheck = validateArguments(command)
+    if (!argCheck.allowed) {
+      return failure("artisan", new Error(`command rejected: ${argCheck.reason}`))
     }
 
     return success(runArtisan(command))
