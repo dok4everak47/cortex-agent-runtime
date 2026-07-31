@@ -1,18 +1,27 @@
 import { runTinker } from "../mcp.js"
 import { success, failure } from "../tool-helper.js"
 
+const TABLES_SCRIPT = `
+  $tables = \\Schema::getTables();
+  foreach ($tables as $t) {
+    echo (is_array($t) ? ($t['name'] ?? $t['schema'] . '.' . $t['name']) : $t) . PHP_EOL;
+  }
+`.trim()
+
+export function scanTables(): string[] {
+  const output = runTinker(TABLES_SCRIPT)
+  return output
+    .split("\n")
+    .map((s) => s.trim())
+    .filter((l) => l.length > 0 && !l.includes(" "))
+}
+
 export function executeSchema(args: Record<string, unknown>) {
   try {
     const action = String(args.action ?? "")
 
     if (action === "tables") {
-      const script = `
-        $tables = \\Schema::getTables();
-        foreach ($tables as $t) {
-          echo (is_array($t) ? ($t['name'] ?? $t['schema'] . '.' . $t['name']) : $t) . PHP_EOL;
-        }
-      `.trim()
-      return success(runTinker(script) || "(no tables)")
+      return success(scanTables().join("\n") || "(no tables)")
     }
 
     if (action === "columns") {

@@ -45,20 +45,18 @@ export function formatRouteList(routes: RouteEntry[]): string {
   return [header, separator, ...lines].join("\n")
 }
 
+export function collectRoutes(): RouteEntry[] {
+  const output = runArtisan("route:list --json")
+  const parsed = JSON.parse(output)
+  if (!Array.isArray(parsed)) {
+    throw new Error("Unexpected route list format: expected an array.")
+  }
+  return parsed as RouteEntry[]
+}
+
 export function executeRouteList(args: Record<string, unknown>) {
   try {
-    const output = runArtisan("route:list --json")
-
-    let routes: RouteEntry[]
-    try {
-      routes = JSON.parse(output)
-    } catch {
-      return failure("routeList", new Error("Failed to parse route list output. Raw output:\n" + output))
-    }
-
-    if (!Array.isArray(routes)) {
-      return failure("routeList", new Error("Unexpected route list format: expected an array."))
-    }
+    const routes = collectRoutes()
 
     const filtered = filterRoutes(routes, {
       name: args.name as string | undefined,

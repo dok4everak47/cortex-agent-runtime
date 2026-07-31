@@ -1,4 +1,4 @@
-import { readdirSync, existsSync, statSync } from "fs"
+import { readdirSync, existsSync, statSync, readFileSync } from "fs"
 import { join } from "path"
 import { getConfig } from "../mcp.js"
 import { success, failure } from "../tool-helper.js"
@@ -54,6 +54,82 @@ function scanSection(resourcesPath: string, subDir: string, label: string): stri
     return [`${label}:`, `  (empty or not found)`]
   }
   return [`${label}:`, ...formatTree(tree, "  ")]
+}
+
+function findFiles(dir: string, ext: string): string[] {
+  if (!existsSync(dir)) return []
+  const found: string[] = []
+  const stack = [dir]
+  while (stack.length > 0) {
+    const current = stack.pop()!
+    for (const entry of readdirSync(current)) {
+      const full = join(current, entry)
+      let stat
+      try {
+        stat = statSync(full)
+      } catch {
+        continue
+      }
+      if (stat.isDirectory()) {
+        stack.push(full)
+      } else if (entry.endsWith(ext)) {
+        found.push(full)
+      }
+    }
+  }
+  return found
+}
+
+function readJson(path: string): Record<string, unknown> | null {
+  if (!existsSync(path)) return null
+  try {
+    return JSON.parse(readFileSync(path, "utf-8"))
+  } catch {
+    return null
+  }
+}
+
+const FRAMEWORK_MARKERS: Array<[string, string]> = [
+  ["vue", "vue"],
+  ["react", "react"],
+  ["inertia", "@inertiajs"],
+  ["livewire", "livewire"],
+  ["alpine", "alpinejs"],
+  ["tailwind", "tailwindcss"],
+  ["vite", "vite"],
+]
+
+export function detectFrontend(projectPath: string): string[] {
+  const detected: string[] = []
+  const resources = join(projectPath, "resources")
+
+  if (findFiles(join(resources, "views"), ".blade.php").length > 0) {
+    detected.push("blade")
+  }
+
+  const jsDir = join(resources, "js")
+  if (existsSync(jsDir)) {
+    if (findFiles(jsDir, ".vue").length > 0 && !detected.includes("vue")) detected.push("vue")
+    if ((findFiles(jsDir, ".jsx").length > 0 || findFiles(jsDir, ".tsx").length > 0) && !detected.includes("react")) {
+      detected.push("react")
+    }
+  }
+
+  const pkg = readJson(join(projectPath, "package.json"))
+  if (pkg) {
+    const deps = {
+      ...((pkg.dependencies as Record<string, string> | undefined) ?? {}),
+      ...((pkg.devDependencies as Record<string, string> | undefined) ?? {}),
+    }
+    const names = Object.keys(deps)
+    for (const [label, needle] of FRAMEWORK_MARKERS) {
+      if (!detected.includes(label) && names.some((d) => d.includes(needle))) {
+        detected.push(label)
+      }
+    }
+  }
+
+  return [...new Set(detected)].sort()
 }
 
 export function executeFrontendScanner() {

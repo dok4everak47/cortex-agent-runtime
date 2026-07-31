@@ -21,6 +21,7 @@ describe("Tool definitions", () => {
       "makeModel",
       "migrationAnalyzer",
       "model",
+      "projectContext",
       "routeList",
       "runTest",
       "schema",

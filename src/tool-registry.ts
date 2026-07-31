@@ -22,6 +22,7 @@ import { executeMakeMigration } from "./tools/make-migration.js"
 import { executeMigrationAnalyzer } from "./tools/migration-analyzer.js"
 import { executeComposerAnalyzer } from "./tools/composer-analyzer.js"
 import { executeCrudGenerator } from "./workflows/crud-generator.js"
+import { executeProjectContext } from "./tools/project-context.js"
 
 export type ToolHandler = (args: Record<string, unknown>) => ToolResult | Promise<ToolResult>
 
@@ -258,6 +259,17 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: ["entity"],
     },
   },
+  {
+    name: "projectContext",
+    description: "Get comprehensive Laravel project context (version, models, routes, packages, structure)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        force: { type: "boolean", description: "Force rebuild instead of using cache" },
+      },
+      required: [],
+    },
+  },
 ]
 
 export const toolHandlers: Record<string, ToolHandler> = {
@@ -279,6 +291,7 @@ export const toolHandlers: Record<string, ToolHandler> = {
   migrationAnalyzer: executeMigrationAnalyzer,
   composerAnalyzer: executeComposerAnalyzer,
   crudGenerator: executeCrudGenerator,
+  projectContext: executeProjectContext,
 }
 
 export async function handleToolCall(name: string, args: Record<string, unknown>): Promise<ToolResult> {
