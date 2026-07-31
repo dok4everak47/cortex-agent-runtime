@@ -22,19 +22,19 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that ma
 
 ## Demo
 
-启动后在任意 MCP 客户端中：
+Once connected, ask your AI agent in any MCP-compatible client:
 
 ```
-> 给博客增加评论功能
-→ intentPlanner: 解析为 create_feature/Comment
+> Add a comment feature to the blog
+→ intentPlanner: parsed as create_feature/Comment
 → createFeature: migration → model → controller → request → views → test
-→ workflowStatus: 运行记录持久化到 .mcp/runs/
+→ workflowStatus: run persisted to .mcp/runs/
 
-> 查看路由
-→ routeList: 47 条路由，可按名称过滤
+> List the routes
+→ routeList: 47 routes, filterable by name
 
-> SQLSTATE[42P01] 报错怎么办
-→ debugWorkflow: 定位 + 诊断 + 修复建议
+> SQLSTATE[42P01] Table not found — how to fix?
+→ debugWorkflow: locate + diagnose + suggest fixes
 ```
 
 ## Tools
