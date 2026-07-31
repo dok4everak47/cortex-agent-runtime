@@ -1,8 +1,32 @@
 {
   "name": "laravel-mcp-server",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "type": "module",
-  "description": "MCP server for Laravel development tools",
+  "description": "AI Coding Agent for Laravel — give Claude / OpenCode / Cursor a Laravel engineering brain via MCP",
+  "keywords": [
+    "laravel",
+    "mcp",
+    "model-context-protocol",
+    "ai-agent",
+    "coding-agent",
+    "opencode",
+    "claude",
+    "cursor",
+    "php",
+    "artisan",
+    "ai-coding",
+    "llm",
+    "codex"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dok4everak47/laravel-mcp-server.git"
+  },
+  "license": "MIT",
+  "author": "luongchin",
+  "engines": {
+    "node": ">=18"
+  },
   "main": "dist/index.js",
   "files": ["dist"],
   "scripts": {
