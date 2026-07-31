@@ -1,6 +1,24 @@
 # Laravel MCP Server
 
-A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that exposes Laravel development tools as standard MCP tools. Works with any MCP-compatible client: **Claude Desktop, Cursor, Codex, OpenCode**, and more.
+**AI Coding Agent for Laravel**
+
+Give Claude / OpenCode / Cursor a **Laravel engineering brain**.
+
+A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that makes your AI coding agent understand, generate and debug Laravel applications. Works with any MCP-compatible client: **Claude Desktop, Cursor, Codex, OpenCode**, and more.
+
+## Features
+
+✅ **Understand Laravel project structure** — models, routes, migrations, packages, frontend — injected automatically
+
+✅ **Generate complete features** — from a natural-language request to working CRUD, Blade views, and REST APIs
+
+✅ **Debug exceptions** — locate the file, diagnose common Laravel errors, suggest fixes
+
+✅ **Generate REST APIs** — migration, model, API controller, Sanctum-protected routes, tests
+
+✅ **Analyze database** — schema, tables, columns, migrations, relationships
+
+✅ **Safe Artisan execution** — command whitelist, dangerous commands blocked, sensitive data redacted
 
 ## Demo
 
