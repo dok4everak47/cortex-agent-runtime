@@ -1,5 +1,5 @@
 {
-  "name": "laravel-mcp-server",
+  "name": "laravel-ai-agent",
   "version": "0.9.1",
   "type": "module",
   "description": "AI Coding Agent for Laravel — give Claude / OpenCode / Cursor a Laravel engineering brain via MCP",

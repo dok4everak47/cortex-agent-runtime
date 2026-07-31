@@ -69,11 +69,11 @@ vendor:publish --force
 
 请通过 GitHub Security Advisory 报告：
 
-https://github.com/dok4everak47/laravel-mcp-server/security/advisories/new
+https://github.com/dok4everak47/laravel-ai-agent/security/advisories/new
 
 或直接发 Issue（保密问题请注明 "security"）：
 
-https://github.com/dok4everak47/laravel-mcp-server/issues/new
+https://github.com/dok4everak47/laravel-ai-agent/issues/new
 
 报告请包含：
 1. 漏洞类型（命令注入 / 路径遍历 / 信息泄露等）

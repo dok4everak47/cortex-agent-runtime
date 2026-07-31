@@ -1,6 +1,6 @@
 # Contributing
 
-感谢你愿意为 laravel-mcp-server 贡献代码。请先阅读本指南，确保你的改动符合项目的架构规范。
+感谢你愿意为 laravel-ai-agent 贡献代码。请先阅读本指南，确保你的改动符合项目的架构规范。
 
 ## 环境搭建
 

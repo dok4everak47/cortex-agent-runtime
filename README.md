@@ -1,6 +1,6 @@
-# Laravel MCP Server
+# Laravel AI Development Agent
 
-**AI Coding Agent for Laravel**
+**An MCP-powered autonomous development toolkit for Laravel projects.**
 
 Give Claude / OpenCode / Cursor a **Laravel engineering brain**.
 
@@ -72,10 +72,10 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that ma
 
 ```bash
 # From npm (demo version)
-npm install laravel-mcp-server@beta
+npm install laravel-ai-agent@beta
 
 # From GitHub (demo version)
-npm install github:dok4everak47/laravel-mcp-server
+npm install github:dok4everak47/laravel-ai-agent
 ```
 
 ### With OpenCode
@@ -87,7 +87,7 @@ Add to `~/.config/opencode/opencode.jsonc`:
   "mcpServers": {
     "laravel": {
       "type": "local",
-      "command": ["node", "/path/to/laravel-mcp-server/dist/index.js"]
+      "command": ["node", "/path/to/laravel-ai-agent/dist/index.js"]
     }
   }
 }
@@ -102,7 +102,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
   "mcpServers": {
     "laravel": {
       "command": "node",
-      "args": ["/path/to/laravel-mcp-server/dist/index.js"]
+      "args": ["/path/to/laravel-ai-agent/dist/index.js"]
     }
   }
 }
