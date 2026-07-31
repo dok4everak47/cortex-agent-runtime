@@ -2,6 +2,23 @@
 
 A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that exposes Laravel development tools as standard MCP tools. Works with any MCP-compatible client: **Claude Desktop, Cursor, Codex, OpenCode**, and more.
 
+## Demo
+
+启动后在任意 MCP 客户端中：
+
+```
+> 给博客增加评论功能
+→ intentPlanner: 解析为 create_feature/Comment
+→ createFeature: migration → model → controller → request → views → test
+→ workflowStatus: 运行记录持久化到 .mcp/runs/
+
+> 查看路由
+→ routeList: 47 条路由，可按名称过滤
+
+> SQLSTATE[42P01] 报错怎么办
+→ debugWorkflow: 定位 + 诊断 + 修复建议
+```
+
 ## Tools
 
 | Tool | Description |
@@ -23,6 +40,13 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that ex
 | `makeMigration` | Create a new migration file |
 | `migrationAnalyzer` | Parse migrations and extract schema (columns, types, FKs) |
 | `composerAnalyzer` | List project dependencies with version info |
+| `projectContext` | Get comprehensive project context (version, models, routes, packages) |
+| `crudGenerator` | Generate full CRUD: migration, model, controller, request, route, test |
+| `createFeature` | Generate full feature: CRUD + Blade views |
+| `apiGenerator` | Generate REST API: migration, model, API controller, routes, tests |
+| `debugWorkflow` | Analyze an error: locate, diagnose, suggest fixes |
+| `intentPlanner` | Parse a natural-language dev request into an executable plan |
+| `workflowStatus` | List/inspect/resume/rollback workflow runs |
 
 ## Usage
 
