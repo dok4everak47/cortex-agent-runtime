@@ -29,6 +29,9 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that ex
 ### Installation
 
 ```bash
+# From npm (demo version)
+npm install laravel-mcp-server@beta
+
 # From GitHub (demo version)
 npm install github:dok4everak47/laravel-mcp-server
 ```
