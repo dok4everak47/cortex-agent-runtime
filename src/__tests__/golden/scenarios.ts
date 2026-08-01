@@ -4,6 +4,8 @@ export type GoldenScenario = {
   request: string
   workflow?: string
   dryRun?: boolean
+  confirmed?: boolean
+  awaitingConfirmation?: boolean
   expect: {
     files?: string[]
     routes?: string[]
@@ -19,6 +21,7 @@ export const SCENARIOS: GoldenScenario[] = [
     name: "Create a Post CRUD",
     request: "Create a Post CRUD with title:string and content:text",
     workflow: "crudGenerator",
+    confirmed: true,
     expect: {
       files: [
         "app/Models/Post.php",
@@ -42,6 +45,7 @@ export const SCENARIOS: GoldenScenario[] = [
     name: "Add comment feature to blog",
     request: "给博客增加评论功能",
     workflow: "createFeature",
+    confirmed: true,
     expect: {
       files: [
         "app/Models/Comment.php",
@@ -66,6 +70,7 @@ export const SCENARIOS: GoldenScenario[] = [
     name: "Create Tag REST API",
     request: "为 Tag 创建 REST API with auth",
     workflow: "apiGenerator",
+    confirmed: true,
     expect: {
       files: ["app/Http/Controllers/TagController.php", "app/Models/Tag.php"],
       routes: ["/api/tags"],
@@ -85,6 +90,7 @@ export const SCENARIOS: GoldenScenario[] = [
     name: "Debug SQL error",
     request: "SQLSTATE[42P01]: Table not found，怎么解决",
     workflow: "debugWorkflow",
+    confirmed: true,
     expect: {
       files: [],
       testResult: "any",
@@ -96,6 +102,16 @@ export const SCENARIOS: GoldenScenario[] = [
     name: "Plan only (dry run)",
     request: "给博客增加评论功能",
     dryRun: true,
+    expect: {
+      files: [],
+    },
+    cleanup: [],
+  },
+  {
+    id: "intent-gate",
+    name: "IntentGate awaits confirmation (no execution)",
+    request: "给博客增加评论功能",
+    awaitingConfirmation: true,
     expect: {
       files: [],
     },

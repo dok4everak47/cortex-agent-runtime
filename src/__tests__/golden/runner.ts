@@ -414,9 +414,13 @@ export async function runScenario(
   restoreRoutes(projectPath)
   const beforeIds = new Set(store.list().map(r => r.id))
 
-  // 2. 调用 intentPlanner（dryRun=false 执行）
+  // 2. 调用 intentPlanner（执行场景需 confirmed=true 通过确认门）
   const dryRun = scenario.dryRun === true
-  const toolResult = await handleIntentPlanner({ request: scenario.request, dryRun })
+  const toolResult = await handleIntentPlanner({
+    request: scenario.request,
+    dryRun,
+    confirmed: scenario.confirmed === true,
+  })
   const text = toolResult.content[0]?.text ?? ""
 
   if (toolResult.isError) {
@@ -441,6 +445,26 @@ export async function runScenario(
       "no plan steps in response",
     ),
   )
+  checks.push(
+    check(
+      "plan summary includes step types",
+      typeof parsed?.summary === "string" && /步骤类型|计划步骤/.test(parsed.summary),
+      `summary=${String(parsed?.summary ?? "").slice(0, 120)}`,
+    ),
+  )
+
+  if (scenario.expect.awaitingConfirmation === true) {
+    checks.push(
+      check("mode = awaiting_confirmation", parsed?.mode === "awaiting_confirmation", `mode=${parsed?.mode ?? "n/a"}`),
+    )
+    checks.push(
+      check(
+        "awaiting_confirmation created no run record",
+        !store.list().some(r => !beforeIds.has(r.id)),
+        "unexpected run record found",
+      ),
+    )
+  }
 
   if (dryRun) {
     checks.push(check("dryRun stayed in plan mode", parsed?.mode === "plan", `mode=${parsed?.mode ?? "n/a"}`))

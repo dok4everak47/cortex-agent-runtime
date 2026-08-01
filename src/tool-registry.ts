@@ -318,12 +318,13 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: "intentPlanner",
-    description: "Parse a natural language development request, generate an execution plan, and optionally execute it",
+    description: "Parse a natural language development request, generate an execution plan, and optionally execute it (execution requires confirmed=true)",
     inputSchema: {
       type: "object",
       properties: {
         request: { type: "string", description: "Natural language request (e.g. '给博客增加评论功能')" },
         dryRun: { type: "boolean", default: true, description: "If true, only show the plan without executing (default: true)" },
+        confirmed: { type: "boolean", description: "If true (and dryRun=false), the plan has been reviewed and will be executed" },
       },
       required: ["request"],
     },

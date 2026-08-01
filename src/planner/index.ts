@@ -4,7 +4,7 @@ import { parseIntent as parseIntentRuleBased } from "./intent-parser.js"
 import { analyzeIntent as analyzeIntentImpl, getLLMConfig as getLLMConfigImpl } from "./llm-analyzer.js"
 import type { LLMAnalyzerConfig } from "./llm-analyzer.js"
 import { makeFeaturePlan } from "./feature-planner.js"
-import type { Intent } from "./plan-schema.js"
+import type { Intent, Plan } from "./plan-schema.js"
 import { contextManager } from "../context/context-manager.js"
 import { toPascalCase } from "../workflows/crud/planner.js"
 import { executeFeaturePlan } from "../workflows/feature/executor.js"
@@ -100,7 +100,17 @@ async function executeIntent(intent: Intent, projectPath: string) {
   }
 }
 
-export async function handleIntentPlanner(args: Record<string, unknown>) {
+export type IntentPlannerHandlerDeps = {
+  parseIntent?: (input: string, projectPath?: string) => Promise<Intent>
+  makePlan?: (intent: Intent, projectPath: string) => Promise<Plan>
+  execute?: (intent: Intent, projectPath: string) => Promise<unknown>
+  getProjectPath?: () => string
+}
+
+export async function handleIntentPlanner(
+  args: Record<string, unknown>,
+  deps: IntentPlannerHandlerDeps = {},
+) {
   try {
     const request = String(args.request ?? "").trim()
     if (!request) {
@@ -108,13 +118,29 @@ export async function handleIntentPlanner(args: Record<string, unknown>) {
     }
 
     const dryRun = args.dryRun !== false
-    const { projectPath } = getConfig()
+    const confirmed = args.confirmed === true
+    const projectPath = deps.getProjectPath?.() ?? getConfig().projectPath
 
-    const intent = await parseIntent(request, projectPath)
-    const plan = await makeFeaturePlan(intent, projectPath)
+    const parse = deps.parseIntent ?? ((input: string, p?: string) => parseIntent(input, p))
+    const makePlan = deps.makePlan ?? ((intent: Intent, p: string) => makeFeaturePlan(intent, p))
+
+    const intent = await parse(request, projectPath)
+    const plan = await makePlan(intent, projectPath)
 
     if (dryRun) {
-      return success(JSON.stringify({ mode: "plan", intent, plan }, null, 2))
+      return success(
+        JSON.stringify(
+          {
+            mode: "plan",
+            intent,
+            plan,
+            summary: plan.summary,
+            nextStep: "如需执行，请再次调用 intentPlanner，设置 dryRun=false 并确认计划（confirmed=true）。",
+          },
+          null,
+          2,
+        ),
+      )
     }
 
     const isCreateAction =
@@ -128,6 +154,7 @@ export async function handleIntentPlanner(args: Record<string, unknown>) {
             mode: "plan",
             intent,
             plan,
+            summary: plan.summary,
             note: "无法识别目标实体，未执行。请补充实体名称（如 '给 Post 生成 CRUD'）。",
           },
           null,
@@ -136,8 +163,27 @@ export async function handleIntentPlanner(args: Record<string, unknown>) {
       )
     }
 
-    const executed = await executeIntent(intent, projectPath)
-    return success(JSON.stringify({ mode: "executed", intent, plan, executed }, null, 2))
+    if (!confirmed) {
+      return success(
+        JSON.stringify(
+          {
+            mode: "awaiting_confirmation",
+            intent,
+            plan,
+            summary: plan.summary,
+            nextStep: "若确认，请再次调用 intentPlanner 并设置 confirmed=true。",
+          },
+          null,
+          2,
+        ),
+      )
+    }
+
+    const execute = deps.execute ?? executeIntent
+    const executed = await execute(intent, projectPath)
+    return success(
+      JSON.stringify({ mode: "executed", intent, plan, summary: plan.summary, executed }, null, 2),
+    )
   } catch (err) {
     return failure("intentPlanner", err)
   }

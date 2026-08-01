@@ -139,12 +139,13 @@ const RELATION_LABEL: Record<RelationType, string> = {
   hasOne: "一对一（hasOne）",
 }
 
-function buildSummary(intent: Intent, ctx: ProjectContext): string {
+function buildSummary(intent: Intent, ctx: ProjectContext, steps: PlanStep[]): string {
   const entity = intent.entity
   const b = derive(entity, intent.fields)
   const action = intent.action
   const entityExists = entity ? ctx.models.includes(b.entityPascal) : false
   const notes: string[] = []
+  const stepTypes = steps.map((s) => s.type).join(" → ")
 
   let text = ""
   switch (action) {
@@ -192,6 +193,21 @@ function buildSummary(intent: Intent, ctx: ProjectContext): string {
   if ((action === "create_feature" || action === "create_crud" || action === "create_api") && entityExists) {
     notes.push(`注意：${entity} 模型已存在，迁移/模型步骤将跳过已存在部分。`)
   }
+  if (ctx.tables.includes(b.table) && action.startsWith("create_")) {
+    notes.push(`注意：${b.table} 表已存在，migration 步骤将跳过。`)
+  }
+  if (steps.some((s) => s.type === "migration" && s.optional === true)) {
+    notes.push(`注意：migration 步骤为可选（实体已存在），表已存在时将跳过。`)
+  }
+  if (steps.some((s) => s.type === "route")) {
+    notes.push(`风险：route 步骤将修改现有 routes/web.php（追加资源路由，不覆盖已有内容）。`)
+  }
+  if (steps.some((s) => s.type === "apiRoute")) {
+    notes.push(`风险：apiRoute 步骤将修改现有 routes/api.php（追加 API 路由）。`)
+  }
+  if (action === "fix_bug" || action === "debug" || action === "enhance") {
+    notes.push(`说明：本工作流只读诊断并输出建议，不修改项目文件。`)
+  }
   if (intent.options.auth === true) {
     if (action === "create_api") {
       notes.push(`路由将使用 auth:sanctum 保护。`)
@@ -202,7 +218,8 @@ function buildSummary(intent: Intent, ctx: ProjectContext): string {
     notes.push(`项目未启用认证，API 路由将不保护。`)
   }
 
-  return [text, ...notes].join("\n")
+  const header = steps.length > 0 ? `计划步骤（${steps.length} 步）：${stepTypes}` : ""
+  return [text, header, ...notes].filter(Boolean).join("\n")
 }
 
 export async function makeFeaturePlan(
@@ -216,6 +233,6 @@ export async function makeFeaturePlan(
     intent.options.auth = true
   }
   const steps = buildSteps(intent, ctx)
-  const summary = buildSummary(intent, ctx)
+  const summary = buildSummary(intent, ctx, steps)
   return { intent, steps, summary }
 }
