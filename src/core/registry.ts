@@ -14,6 +14,13 @@ export type ToolResult = {
   isError?: boolean
 }
 
+export type RoleManifest = {
+  id: string
+  name: string
+  description: string
+  tools: string[]
+}
+
 export interface DomainManifest {
   id: string
   name: string
@@ -22,19 +29,28 @@ export interface DomainManifest {
   getTools(): ToolDefinition[]
   getHandlers(): Record<string, ToolHandler>
   getProjectPath?(): string | undefined
+  roles?: RoleManifest[]
 }
 
 export class ToolRegistry {
   private definitions: ToolDefinition[] = []
   private handlers: Record<string, ToolHandler> = {}
+  private domains: DomainManifest[] = []
 
   registerDomain(manifest: DomainManifest): void {
+    this.domains.push(manifest)
     for (const tool of manifest.getTools()) {
       if (!this.definitions.some((d) => d.name === tool.name)) {
         this.definitions.push(tool)
       }
     }
     Object.assign(this.handlers, manifest.getHandlers())
+    if (this.handlers["listRoles"]) {
+      this.handlers["listRoles"] = (args) => {
+        const roles = this.listRoles()
+        return { content: [{ type: "text", text: JSON.stringify(roles, null, 2) }], isError: false }
+      }
+    }
   }
 
   listTools(): ToolDefinition[] {
@@ -43,6 +59,25 @@ export class ToolRegistry {
 
   getHandlers(): Record<string, ToolHandler> {
     return this.handlers
+  }
+
+  listRoles(): RoleManifest[] {
+    const byId = new Map<string, RoleManifest>()
+    for (const domain of this.domains) {
+      for (const role of domain.roles ?? []) {
+        const existing = byId.get(role.id)
+        if (existing) {
+          existing.tools = [...new Set([...existing.tools, ...role.tools])]
+        } else {
+          byId.set(role.id, { id: role.id, name: role.name, description: role.description, tools: [...role.tools] })
+        }
+      }
+    }
+    return [...byId.values()]
+  }
+
+  getRoleTools(roleId: string): string[] {
+    return this.listRoles().find((role) => role.id === roleId)?.tools ?? []
   }
 
   callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {

@@ -1,3 +1,7 @@
+import type { ModuleName } from "./module-cache.js"
+
+export type ModuleSource = "cache" | "realtime" | "fallback"
+
 export type ProjectContext = {
   laravel: {
     version: string
@@ -34,4 +38,5 @@ export type ProjectContext = {
   }
   builtAt: number
   source: string
+  sourceByModule: Record<ModuleName, ModuleSource>
 }

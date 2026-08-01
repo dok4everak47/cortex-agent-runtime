@@ -6,8 +6,9 @@ import { scanModels } from "../tools/model.js"
 import { scanTables } from "../tools/schema.js"
 import { collectRoutes } from "../tools/route-list.js"
 import { detectFrontend } from "../tools/frontend-scanner.js"
+import { resolveChain } from "../../../core/source-chain.js"
 import { clearLegacyCache, ModuleCache, type ModuleName } from "./module-cache.js"
-import type { ProjectContext } from "./types.js"
+import type { ModuleSource, ProjectContext } from "./types.js"
 
 const MODULES: ModuleName[] = ["project", "models", "routes", "schema", "packages"]
 
@@ -240,20 +241,35 @@ function collectModuleDeps(cache: ModuleCache, module: ModuleName): Record<strin
 interface LoadedModule {
   data: unknown
   hit: boolean
+  source: ModuleSource
 }
 
 async function loadModule(cache: ModuleCache, module: ModuleName, projectPath: string): Promise<LoadedModule> {
   const deps = collectModuleDeps(cache, module)
-  const cached = cache.get<unknown>(module)
-  if (cached && cache.isFresh(cached, deps)) {
-    getLogger().debug("context module cache hit", { module, projectPath })
-    return { data: cached.data, hit: true }
-  }
+  const { value, source } = await resolveChain<unknown>([
+    {
+      name: "cache",
+      priority: 10,
+      resolve: () => {
+        const cached = cache.get<unknown>(module)
+        if (cached && cache.isFresh(cached, deps)) return cached.data
+        return null
+      },
+    },
+    {
+      name: "realtime",
+      priority: 5,
+      resolve: () => buildModule(module, projectPath),
+    },
+  ])
 
-  getLogger().debug("building context module", { module, projectPath })
-  const data = await buildModule(module, projectPath)
-  cache.set(module, data, deps)
-  return { data, hit: false }
+  if (source === "realtime") {
+    getLogger().debug("building context module", { module, projectPath })
+    cache.set(module, value, deps)
+  } else {
+    getLogger().debug("context module cache hit", { module, projectPath })
+  }
+  return { data: value, hit: source === "cache", source: source as ModuleSource }
 }
 
 /** Build (or reuse from cache) a single context module. */
@@ -283,6 +299,10 @@ export async function getContext(projectPath: string): Promise<ProjectContext> {
     collectStructure(projectPath),
   ])
 
+  const sourceByModule = Object.fromEntries(
+    MODULES.map((module, i) => [module, results[i].source]),
+  ) as Record<ModuleName, ModuleSource>
+
   const ctx: ProjectContext = {
     laravel: project.laravel,
     app: project.app,
@@ -294,6 +314,7 @@ export async function getContext(projectPath: string): Promise<ProjectContext> {
     structure,
     builtAt: Date.now(),
     source: results.every((r) => r.hit) ? "cache" : "realtime",
+    sourceByModule,
   }
 
   getLogger().info("project context assembled", {
@@ -302,6 +323,7 @@ export async function getContext(projectPath: string): Promise<ProjectContext> {
     tables: schema.length,
     routes: routes.count,
     source: ctx.source,
+    sourceByModule,
   })
 
   return ctx

@@ -95,6 +95,13 @@ describe("context builder modules", () => {
     assert.deepEqual(ctx.frontend, ["blade", "vite", "vue"])
     assert.deepEqual(ctx.structure, { controllers: 1, views: 1, migrations: 1, tests: 2 })
     assert.equal(ctx.source, "realtime")
+    assert.deepEqual(ctx.sourceByModule, {
+      project: "realtime",
+      models: "realtime",
+      routes: "realtime",
+      schema: "realtime",
+      packages: "realtime",
+    })
 
     for (const module of ["project", "models", "routes", "schema", "packages"]) {
       assert.ok(existsSync(join(tmpDir, ".mcp", "context", `${module}.json`)), `${module}.json should exist`)
@@ -108,6 +115,13 @@ describe("context builder modules", () => {
     const ctx = await buildContext(tmpDir)
     assert.equal(ctx.source, "cache")
     assert.equal(tinkerCalls, beforeCalls)
+    assert.deepEqual(ctx.sourceByModule, {
+      project: "cache",
+      models: "cache",
+      routes: "cache",
+      schema: "cache",
+      packages: "cache",
+    })
   })
 
   it("rebuilds only the schema module when a migration changes", async () => {
@@ -119,6 +133,8 @@ describe("context builder modules", () => {
     assert.equal(ctx.source, "realtime")
     assert.equal(tinkerCalls, beforeCalls + 1, "only the tables scan should rerun")
     assert.deepEqual(ctx.tables, ["users", "posts"])
+    assert.equal(ctx.sourceByModule.schema, "realtime")
+    assert.equal(ctx.sourceByModule.project, "cache")
   })
 
   it("rebuilds only the models module when a model changes", async () => {

@@ -25,8 +25,10 @@ import {
   executeApiGenerator,
 } from "./workflows/index.js"
 import { executeProjectContext } from "./tools/project-context.js"
+import { executeContextSource } from "./tools/context-source.js"
 import { executeWorkflowStatus } from "./tools/workflow-status.js"
 import { handleIntentPlanner } from "./planner/index.js"
+import { executeListRoles } from "../../core/tools/list-roles.js"
 
 const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
@@ -301,6 +303,26 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: "contextSource",
+    description: "查看每个 context 模块的缓存命中情况与来源（cache/realtime），用于审计项目上下文来自缓存还是实时构建",
+    inputSchema: {
+      type: "object",
+      properties: {
+        force: { type: "boolean", description: "先重建再报告（默认 false）" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "listRoles",
+    description: "列出当前项目可用的角色及其绑定的工具（skill 绑定），一次调用即可了解可以以哪些身份工作、每个角色能用什么工具。",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
     name: "intentPlanner",
     description: "Parse a natural language development request, generate an execution plan, and optionally execute it (execution requires confirmed=true)",
     inputSchema: {
@@ -350,8 +372,10 @@ const toolHandlers: Record<string, ToolHandler> = {
   debugWorkflow: executeDebugWorkflow,
   apiGenerator: executeApiGenerator,
   projectContext: executeProjectContext,
+  contextSource: executeContextSource,
   intentPlanner: handleIntentPlanner,
   workflowStatus: executeWorkflowStatus,
+  listRoles: executeListRoles,
 }
 
 export const laravelDomain: DomainManifest = {
@@ -364,4 +388,29 @@ export const laravelDomain: DomainManifest = {
   getTools: () => TOOL_DEFINITIONS,
   getHandlers: () => toolHandlers,
   getProjectPath: () => process.env.LARAVEL_PROJECT_PATH,
+  roles: [
+    {
+      id: "engineer",
+      name: "工程师",
+      description: "核心编码：artisan、schema、model、路由、测试、生成器、调试、项目上下文等",
+      tools: [
+        "artisan", "schema", "model", "routeList", "runTest",
+        "makeModel", "makeController", "makeMigration",
+        "migrationAnalyzer", "composerAnalyzer",
+        "crudGenerator", "createFeature", "apiGenerator",
+        "debugWorkflow", "projectContext", "intentPlanner",
+        "workflowStatus", "envInfoSafe", "configGet",
+        "log", "frontendScanner", "cache", "migrateStatus", "envInfo",
+      ],
+    },
+    {
+      id: "maintainer",
+      name: "维护者",
+      description: "运维维护：迁移、缓存、日志、环境信息、配置、测试、工作流状态",
+      tools: [
+        "artisan", "migrateStatus", "cache", "log", "envInfo",
+        "envInfoSafe", "configGet", "runTest", "workflowStatus", "composerAnalyzer",
+      ],
+    },
+  ],
 }

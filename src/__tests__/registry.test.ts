@@ -24,7 +24,7 @@ describe("ToolRegistry", () => {
     const registry = new ToolRegistry()
     registry.registerDomain(genericDomain)
     registry.registerDomain(genericDomain)
-    assert.equal(registry.listTools().length, 3)
+    assert.equal(registry.listTools().length, 4)
   })
 
   it("returns an error for unknown tools", async () => {
