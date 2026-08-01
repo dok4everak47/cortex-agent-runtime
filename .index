@@ -1,0 +1,14 @@
+CHANGELOG.md
+CONTRIBUTING.md
+README.md
+SECURITY.md
+TASK-GENERALIZE.md
+dist
+docs
+node_modules
+package-lock.json
+package.json
+scripts
+src
+storage
+tsconfig.json
