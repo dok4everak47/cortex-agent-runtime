@@ -24,6 +24,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that tu
 | `gitStatus` | Git status summary (branch, staged/unstaged changes) |
 | `fileSearch` | Search files by glob, excluding `.git` / `node_modules` / `vendor` |
 | `projectTree` | Two-level directory tree of the project |
+| `listRoles` | List the roles available in this project and the tools each role owns |
 
 ### Laravel domain
 
@@ -50,6 +51,18 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that tu
 | `debugWorkflow` | Error location, diagnosis, fix suggestions |
 | `intentPlanner` | Natural-language request → executable plan |
 | `workflowStatus` | List/inspect/resume/rollback runs |
+| `contextSource` | Show whether each piece of project context came from cache or was rebuilt live |
+| `listRoles` | List the roles available in this project and the tools each role owns |
+
+## Why agents trust their answers
+
+Two design principles borrowed from real-world system-prompt architecture:
+
+- **Roles, not tool lists.** `listRoles` tells the agent who it can be in this project — an *explorer* (read-only investigation), an *engineer* (build and fix), or a *maintainer* (ops and verification) — and which tools each role owns. Instead of facing a flat wall of tools, the agent picks a role and stays inside its boundary. Fewer missteps, clearer intent.
+- **Know where your facts come from.** `contextSource` shows whether each module of project context was served from cache or rebuilt in real time, and context itself is assembled through a priority chain (`cache → live → safe default`) instead of "the agent figures it out". When the agent answers, it knows how fresh the facts are — and so do you.
+
+**Before:** an agent stares at 29 tools and stale context it can't date-check.
+**After:** it knows its role, its toolset, and the freshness of everything it reads.
 
 ## Quick Start
 
@@ -130,18 +143,20 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 src/
 ├── index.ts                 # entry: detect → load domains → register → start MCP
 ├── core/                    # framework layer — project-type agnostic
-│   ├── registry.ts          # ToolRegistry: registerDomain / listTools / callTool
+│   ├── registry.ts          # ToolRegistry: registerDomain / listTools / callTool / roles
+│   ├── source-chain.ts      # resolveChain: priority fallback chain (cache → live → default)
 │   ├── mcp.ts               # getConfig / getLogger / runCommand
 │   ├── logger.ts            # leveled logger
 │   ├── detector.ts          # detectDomains(projectPath) → DomainManifest[]
 │   ├── glob.ts              # minimal `*` / `**` glob
-│   └── context/             # generic context interface
+│   ├── context/             # generic context interface
+│   └── tools/               # shared tools (listRoles)
 └── domains/
-    ├── generic/             # always loaded: gitStatus / fileSearch / projectTree
+    ├── generic/             # always loaded: gitStatus / fileSearch / projectTree / listRoles
     └── laravel/             # tools / workflows / context / security / planner / manifest
 ```
 
-Each domain exports a `DomainManifest` (`id`, `name`, `detect`, `getTools`, `getHandlers`, `getProjectPath?`). The Laravel domain keeps its own runtime (`domains/laravel/mcp.ts`), tools, workflows, context, security, and planner — the pre-existing 24-tool surface is unchanged.
+Each domain exports a `DomainManifest` (`id`, `name`, `detect`, `getTools`, `getHandlers`, `getProjectPath?`, `roles?`). Roles declare who the agent can be in this project (explorer / engineer / maintainer) and which tools each role owns — the agent can call `listRoles` instead of guessing. The Laravel domain keeps its own runtime (`domains/laravel/mcp.ts`), tools, workflows, context, security, and planner — the pre-existing 24-tool surface is unchanged.
 
 ## Requirements
 
