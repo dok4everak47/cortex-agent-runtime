@@ -7,3 +7,6 @@ storage/
 .supervisor/
 .mcp/
 .roadmap/
+.htask/
+REPORT.md
+REVIEW.md

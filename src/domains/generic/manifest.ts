@@ -1,5 +1,6 @@
 import type { DomainManifest, ToolDefinition, ToolHandler } from "../../core/registry.js"
 import { executeListRoles } from "../../core/tools/list-roles.js"
+import { executeToolStats } from "../../core/tools/tool-stats.js"
 import { executeGitStatus } from "./tools/git-status.js"
 import { executeFileSearch } from "./tools/file-search.js"
 import { executeProjectTree } from "./tools/project-tree.js"
@@ -43,6 +44,17 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: [],
     },
   },
+  {
+    name: "toolStats",
+    description: "返回所有 MCP 工具的调用统计（调用次数 / 平均耗时 / 最近调用时间），传 { reset: true } 可先清零全部统计再返回。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        reset: { type: "boolean", description: "若为 true，清零全部工具调用统计" },
+      },
+      required: [],
+    },
+  },
 ]
 
 const toolHandlers: Record<string, ToolHandler> = {
@@ -50,6 +62,7 @@ const toolHandlers: Record<string, ToolHandler> = {
   fileSearch: executeFileSearch,
   projectTree: executeProjectTree,
   listRoles: executeListRoles,
+  toolStats: executeToolStats,
 }
 
 export const genericDomain: DomainManifest = {

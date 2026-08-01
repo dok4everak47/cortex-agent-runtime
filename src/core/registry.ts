@@ -32,10 +32,30 @@ export interface DomainManifest {
   roles?: RoleManifest[]
 }
 
+// 单个工具的调用统计
+export interface ToolStatsEntry {
+  calls: number
+  totalMs: number
+  lastCalledAt: number
+}
+
+export interface ToolStats {
+  name: string
+  calls: number
+  avgDurationMs: number
+  lastCalledAt: number
+}
+
+export interface ToolStatsReport {
+  tools: ToolStats[]
+  totalCalls: number
+}
+
 export class ToolRegistry {
   private definitions: ToolDefinition[] = []
   private handlers: Record<string, ToolHandler> = {}
   private domains: DomainManifest[] = []
+  private stats: Map<string, ToolStatsEntry> = new Map()
 
   registerDomain(manifest: DomainManifest): void {
     this.domains.push(manifest)
@@ -98,11 +118,13 @@ export class ToolRegistry {
       .then(() => handler(args))
       .then((result) => {
         const durationMs = (performance.now() - start).toFixed(1)
+        this.recordStat(name, durationMs)
         logger.info("tool completed", { name, durationMs })
         return result
       })
       .catch((err) => {
         const durationMs = (performance.now() - start).toFixed(1)
+        this.recordStat(name, durationMs)
         const msg = err instanceof Error ? err.message : String(err)
         logger.error("tool failed", { name, durationMs, error: msg })
         return {
@@ -110,6 +132,33 @@ export class ToolRegistry {
           isError: true,
         }
       })
+  }
+
+  private recordStat(name: string, durationMs: string): void {
+    const entry = this.stats.get(name) ?? { calls: 0, totalMs: 0, lastCalledAt: 0 }
+    entry.calls += 1
+    entry.totalMs += Number(durationMs)
+    entry.lastCalledAt = Date.now()
+    this.stats.set(name, entry)
+  }
+
+  getToolStats(): ToolStatsReport {
+    const tools: ToolStats[] = []
+    for (const [name, entry] of this.stats) {
+      tools.push({
+        name,
+        calls: entry.calls,
+        avgDurationMs: entry.calls > 0 ? Math.round((entry.totalMs / entry.calls) * 10) / 10 : 0,
+        lastCalledAt: entry.lastCalledAt,
+      })
+    }
+    tools.sort((a, b) => b.calls - a.calls)
+    const totalCalls = tools.reduce((sum, t) => sum + t.calls, 0)
+    return { tools, totalCalls }
+  }
+
+  resetToolStats(): void {
+    this.stats.clear()
   }
 }
 

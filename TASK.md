@@ -1,145 +1,74 @@
-# TASK.md — Cortex Agent Runtime: 数据源优先级链 + 角色元数据
+# TASK — Cortex 新增 toolStats 工具（工具调用统计）
 
-> 灵感来源: OpenClaw SystemPrompt 4 文件分层架构（AGENTS.md / SOUL.md / IDENTITY.md / USER.md）
-> 两个设计借鉴点:
-> 1. **数据源优先级链** — 多信息源按信任/新鲜度排序 fallback，最后兜底，不让"AI 自己看着办"
-> 2. **三重角色 + skill 绑定** — 角色定义明确，每个角色绑定自己的工具集（skill），职责不重叠
->
-> 目标: 把这两个设计落到 Cortex Agent Runtime，保持向后兼容（现有 273 个测试全绿）。
+## Goal
 
----
+让外部 agent 能查看本项目所有 MCP 工具的调用统计（调用次数 / 平均耗时 / 最近调用时间）。
 
-## Milestone 1 — 数据源优先级链 (SourceChain)
+Before: agent 想知道"哪个工具最慢/最常用"只能翻日志。
+After: 调用 `toolStats` 一次拿到全部工具的统计 JSON。
 
-**背景**: OpenClaw 的 USER.md 定义了数据源优先级链 `memory_search → feishu-comm → 当日 memory → cron → ... → USER.md（最后兜底）`。每个请求按链取数，高优先级源失败自动 fallback 到低优先级源，最后有确定性兜底，**没有"AI 自己看着办"的模糊地带**。
+## Context
 
-**Cortex 现状**: `src/domains/laravel/context/builder.ts` 已有雏形——`safe()` 兜底 + `ModuleCache` 按 mtime 新鲜度判断 + `source: "cache" | "realtime"` 字段。但缺少:
-- 显式的**链式 fallback 语义**（目前是 cache 新鲜就用 cache，否则 realtime，无中间层）
-- 每模块的**来源可观测性**（source 只有整体一个字段，不知道每个模块来自哪）
-- 可复用的**链式解析工具**（只有 Laravel domain 有，generic domain 无法用）
+- 项目: ~/Project/cortex-agent-runtime（MCP-native AI Agent Framework, TypeScript）
+- `src/core/registry.ts` 的 `ToolRegistry.callTool()` 已有 `performance.now()` 计时 + `logger.info("tool called", {name, args})` 日志，但统计不保留。
+- 工具注册机制: domain manifest 的 `TOOL_DEFINITIONS` + `toolHandlers`，generic/laravel 两个 domain 都有 manifest。
+- 现有测试: 288 个全绿（node:test, `npm test`）。
 
-### 设计
+## Current Behavior
 
-**新增 `src/core/source-chain.ts`** — 通用的链式解析工具:
+- `callTool()` 每次调用只打日志，统计信息即用即弃。
+- 没有暴露工具调用统计的 MCP 工具。
 
-```ts
-export type SourceStep<T> = {
-  name: string                    // 源名，如 "cache" / "realtime" / "fallback"
-  priority: number                // 越大越优先，先试
-  resolve: () => T | null | Promise<T | null>   // 返回 null = 本源失败，fallback 到下一个
-}
+## Expected Behavior
 
-export type ChainResult<T> = {
-  value: T
-  source: string                  // 实际命中的源名
-  attempts: string[]              // 尝试过的源名（顺序），便于可观测
-}
+- 新增 MCP 工具 `toolStats`（generic domain，所有项目可用）：
+  - 输入: `{}`（或 `{ reset: true }` 清零统计）
+  - 输出: JSON `{ tools: [{ name, calls, avgDurationMs, lastCalledAt }], totalCalls }`
+- 统计数据从 `ToolRegistry` 收集（registry 内部维护 per-tool 计数器），不引入新依赖。
 
-export async function resolveChain<T>(steps: SourceStep<T>[]): Promise<ChainResult<T>>
-```
+## Design
 
-语义:
-- 按 `priority` 降序尝试每一步
-- `resolve()` 返回 `null` → 记录到 `attempts`，尝试下一步
-- 全部失败 → **throw 明确的 ChainError**（调用方决定兜底，不吞错）
-- `attempts` 记录每个尝试过的源，用于日志/审计
+1. **`src/core/registry.ts`**:
+   - `ToolRegistry` 增加私有统计 Map: `stats: Map<string, { calls: number, totalMs: number, lastCalledAt: number }>`
+   - `callTool()` 内每次调用更新: calls++ / totalMs += duration / lastCalledAt = Date.now()
+   - 新增方法 `getToolStats(): { tools: Array<{name, calls, avgDurationMs, lastCalledAt}>, totalCalls }`（平均耗时 = totalMs/calls，保留 1 位小数）
+   - 新增方法 `resetToolStats(): void`
+2. **`src/core/tools/tool-stats.ts`**（新文件）:
+   - `executeToolStats(args): ToolResult` — 读 registry 统计，`reset` 时清零，返回 JSON
+   - 用现有 `success`/`failure` helper（从 `../tool-helper.js` import）
+3. **`src/domains/generic/manifest.ts`**:
+   - `TOOL_DEFINITIONS` 增加 `toolStats` 定义（name/description/inputSchema: `reset` 可选 boolean）
+   - `toolHandlers` 增加 `toolStats: executeToolStats`
+4. 不修改 laravel domain、不修改任何现有工具行为。
 
-**重构 `src/domains/laravel/context/builder.ts`**:
+## Files
 
-1. 引入 `ModuleSource = "cache" | "realtime" | "fallback"` 类型
-2. `LoadedModule` 增加 `source: ModuleSource` 字段
-3. `loadModule()` 改为用 `resolveChain`:
-   - 步骤 1 `cache`: 有缓存且 `isFresh` → 返回缓存数据；否则 `null`
-   - 步骤 2 `realtime`: 实际构建（`buildModule`）
-   - （realtime 失败已有 `safe()` 兜底返回 fallback 值，此层保持）
-4. `getContext()` 的 `ProjectContext.source` 改为**每模块来源映射**，同时保留整体字段兼容:
+- 修改: `src/core/registry.ts`、`src/domains/generic/manifest.ts`
+- 新增: `src/core/tools/tool-stats.ts`、`src/__tests__/tool-stats.test.ts`
 
-```ts
-// types.ts 增加:
-sourceByModule: Record<ModuleName, ModuleSource>
-// 保留现有 source: "cache" | "realtime"（全部命中 cache 才为 "cache"，否则 "realtime"）
-```
+## Constraints
 
-**新增 MCP 工具 `contextSource`**（Laravel domain）:
-- 作用: 查看每个 context 模块的缓存命中情况与来源
-- 输入: `{}`（或可选 `force` 先重建再报告）
-- 输出: JSON `{ modules: { project: "cache", models: "realtime", ... }, builtAt, overall }`
-- 价值: 让外部 agent 能审计"项目上下文来自缓存还是实时"，对应 OpenClaw 的"数据源信任层级"理念
+- 不引入新依赖；TypeScript 严格模式；类型跟随现有风格（`ToolResult` 等）
+- 向后兼容: `callTool()` 行为不变，只是内部多记账；不改变任何现有工具名/参数
+- 测试用 mock 的 registry 实例（不依赖真实 MCP 启动）
+- 中文注释风格与现有代码一致
 
-### 测试 (`src/__tests__/source-chain.test.ts` + 更新 context-builder 测试)
-
-- `resolveChain` 按优先级尝试、null 时 fallback、全失败 throw
-- `resolveChain` 记录 attempts 顺序
-- `contextSource` 工具注册 + 返回正确的每模块来源
-- 现有 context-builder / context-cache 测试保持全绿（向后兼容断言: `source` 字段仍存在）
-
----
-
-## Milestone 2 — 角色元数据 (RoleManifest)
-
-**背景**: OpenClaw 的 IDENTITY.md 定义三重角色（技术合伙人 / 私人助理 / 家庭管家），每个角色有明确职责 + 绑定自己的 skill（工具调用 / cron+HEARTBEAT / memory/health/）。角色是"确定的不重叠的"，AI 根据场景切换但角色定义清晰。
-
-**Cortex 现状**: `DomainManifest` 只有工具集合（`getTools()` / `getHandlers()`），没有"角色"概念。所有工具平铺，外部 agent 看到 26 个工具不知道哪个对应什么职责。
-
-### 设计
-
-**`src/core/registry.ts` 增加角色支持**:
-
-```ts
-export type RoleManifest = {
-  id: string                        // 如 "engineer" / "maintainer"
-  name: string                      // 如 "工程师" / "维护者"
-  description: string               // 角色职责
-  tools: string[]                   // 绑定到该角色的工具名（skill 绑定）
-}
-
-// DomainManifest 增加（可选，向后兼容）:
-roles?: RoleManifest[]
-```
-
-**`ToolRegistry` 增加**:
-
-```ts
-listRoles(): RoleManifest[]   // 聚合所有 domain 声明的角色
-getRoleTools(roleId: string): string[]  // 某角色的工具列表
-```
-
-**各 domain 声明角色**:
-
-- `generic` domain: 角色 `explorer`（探索者）→ `gitStatus, fileSearch, projectTree`
-- `laravel` domain: 角色 `engineer`（工程师）→ 核心编码工具（artisan, schema, model, routeList, runTest, makeModel, makeController, makeMigration, migrationAnalyzer, composerAnalyzer, crudGenerator, createFeature, apiGenerator, debugWorkflow, projectContext, intentPlanner, workflowStatus, envInfoSafe, configGet, log, frontendScanner, cache, migrateStatus, envInfo）
-- 可加第三个角色 `maintainer`（维护者）→ 运维类工具（artisan, migrateStatus, cache, log, envInfo, envInfoSafe, configGet, runTest, workflowStatus, composerAnalyzer）
-
-**新增 MCP 工具 `listRoles`**（两个 domain 都注册，registry 合并去重）:
-- 输入: `{}`
-- 输出: JSON 角色列表，每角色含 `id, name, description, tools[]`
-- 价值: 外部 agent 调用一次就知道"这个项目我能以哪些角色工作，每个角色能用什么工具"——对应 IDENTITY.md 的"身份是确定的"
-
-### 测试 (`src/__tests__/role-manifest.test.ts`)
-
-- generic 声明 `explorer` 角色，tools 绑定正确
-- laravel 声明 `engineer` + `maintainer`，工具名都是已注册工具（无悬空引用）
-- `listRoles()` 聚合去重（同 id 角色合并 tools）
-- `getRoleTools()` 返回正确工具列表
-- `listRoles` MCP 工具返回合法 JSON
-- 现有 registry.test.ts 保持全绿（roles 字段可选，不破坏现有断言）
-
----
-
-## 验收标准
+## Acceptance Criteria
 
 1. `npm run typecheck` 通过
-2. `npm test` 全绿（现有测试 + 新增 source-chain / role-manifest / contextSource 测试）
-3. `npm run build` 通过
-4. 手工验证:
-   - `echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | CORTEX_PROJECT_PATH=<临时laravel项目> npx tsx src/index.ts` 能看到新增的 `listRoles` 和 `contextSource` 工具
-   - `listRoles` 返回 engineer/explorer/maintainer 角色及绑定工具
-   - `contextSource` 返回每模块来源
+2. `npm test` 全绿（新增 tool-stats 测试: 调用计数、平均耗时、reset、未调用工具不在列表或 calls=0）
+3. tools/list 中出现 `toolStats`
+4. 调用 `toolStats` 返回合法 JSON，含 tools 数组和 totalCalls
+5. 现有 288 测试不回归
 
-## 约束
+## Verification Commands
 
-- **向后兼容**: 不改变现有工具名、参数、DomainManifest 必填字段（roles 可选）、ProjectContext 已有字段
-- 不引入新依赖（标准库 + 现有 devDeps 足够）
-- 遵循现有代码风格: 工具函数导出 `execute*` / `handle*`，工具定义在 manifest 的 `TOOL_DEFINITIONS`，用 `success`/`failure` helper 返回
-- 中文注释/错误消息与现有代码一致（现有 planner/llm-analyzer 用中文 prompt）
-- 不修改 dist/（构建产物），只改 src/ + 测试
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+## Rollback Plan
+
+- `git revert` 该 commit；或删除 `src/core/tools/tool-stats.ts` + 还原 registry.ts/manifest.ts 改动
