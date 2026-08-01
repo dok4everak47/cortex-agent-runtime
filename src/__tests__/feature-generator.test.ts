@@ -4,14 +4,14 @@ import { rmSync } from "fs"
 
 describe("createFeature", () => {
   it("returns error for missing entity", async () => {
-    const mod = await import("../workflows/feature-generator.js")
+    const mod = await import("../domains/laravel/workflows/feature-generator.js")
     const result = await mod.executeCreateFeature({})
     assert.ok(result.isError)
     assert.ok(result.content[0].text.includes("entity"))
   })
 
   it("makeFeaturePlan defaults to web controller + views + web test", async () => {
-    const { makeFeaturePlan } = await import("../workflows/feature/planner.js")
+    const { makeFeaturePlan } = await import("../domains/laravel/workflows/feature/planner.js")
     const plan = makeFeaturePlan("Tag", "name:string,color:string")
     assert.equal(plan.length, 7)
     assert.deepEqual(plan.map(p => p.type), [
@@ -23,14 +23,14 @@ describe("createFeature", () => {
   })
 
   it("makeFeaturePlan skips views when views=false", async () => {
-    const { makeFeaturePlan } = await import("../workflows/feature/planner.js")
+    const { makeFeaturePlan } = await import("../domains/laravel/workflows/feature/planner.js")
     const plan = makeFeaturePlan("Tag", "name:string", { views: false })
     assert.equal(plan.length, 6)
     assert.ok(!plan.some(p => p.type === "views"))
   })
 
   it("makeFeaturePlan uses api steps when api=true", async () => {
-    const { makeFeaturePlan } = await import("../workflows/feature/planner.js")
+    const { makeFeaturePlan } = await import("../domains/laravel/workflows/feature/planner.js")
     const plan = makeFeaturePlan("Tag", "name:string", { api: true })
     assert.equal(plan.length, 6)
     assert.deepEqual(plan.map(p => p.type), [
@@ -39,7 +39,7 @@ describe("createFeature", () => {
   })
 
   it("generateViews produces four blade templates with resource routes", async () => {
-    const { generateViews, fieldLabel } = await import("../workflows/feature/steps/views.js")
+    const { generateViews, fieldLabel } = await import("../domains/laravel/workflows/feature/steps/views.js")
     assert.equal(fieldLabel("category_id"), "Category Id")
     const views = generateViews("Tag", "tag", "tags", [{ name: "name", type: "string" }], "app")
     assert.deepEqual(Object.keys(views).sort(), ["create", "edit", "index", "show"])
@@ -55,7 +55,7 @@ describe("createFeature", () => {
   })
 
   it("handles non-existent laravel project gracefully", async () => {
-    const mod = await import("../workflows/feature-generator.js")
+    const mod = await import("../domains/laravel/workflows/feature-generator.js")
     const tmp = `/tmp/non-existent-project-feature-${Date.now()}`
     const origPath = process.env.LARAVEL_PROJECT_PATH
     process.env.LARAVEL_PROJECT_PATH = tmp

@@ -1,81 +1,85 @@
-# Laravel AI Development Agent
+# Cortex Agent Runtime — MCP-native AI Agent Framework
 
-**An MCP-powered autonomous development toolkit for Laravel projects.**
+**Before: AI doesn't understand your project. After: AI can analyze, generate and debug applications.**
 
-Give Claude / OpenCode / Cursor a **Laravel engineering brain**.
+A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that turns any coding agent (Claude, Cursor, Codex, OpenCode, and more) into an autonomous engineering brain for the projects you work on. The runtime is **project-type agnostic**: it loads a set of *domains* based on what your project is, so the same runtime works across Laravel apps, Node projects, and anything else.
 
-A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that makes your AI coding agent understand, generate and debug Laravel applications. Works with any MCP-compatible client: **Claude Desktop, Cursor, Codex, OpenCode**, and more.
+## Runtime
 
-## Features
+- **Project-type detection** — `core/detector.ts` inspects the project and activates the matching domains. Generic tools are always loaded; the Laravel domain activates when `composer.json` + `artisan` are present.
+- **Domain registration** — `core/registry.ts` exposes `registerDomain(manifest)`; `listTools()` / `callTool()` stay stable so the MCP surface doesn't change between projects.
+- **Safe by default** — local-only, offline, no telemetry. Command whitelists, dangerous-command blocking, and sensitive-data redaction are layered in.
 
-✅ **Understand Laravel project structure** — models, routes, migrations, packages, frontend — injected automatically
+## Built-in Domains
 
-✅ **Generate complete features** — from a natural-language request to working CRUD, Blade views, and REST APIs
+| Domain | When it loads | Tools |
+|--------|---------------|-------|
+| Generic | Always | `gitStatus`, `fileSearch`, `projectTree` |
+| Laravel | `composer.json` + `artisan` exist | artisan, schema, model, routes, migrations, CRUD/feature/API generators, debug workflow, intentPlanner, workflowStatus, context, and more |
 
-✅ **Debug exceptions** — locate the file, diagnose common Laravel errors, suggest fixes
-
-✅ **Generate REST APIs** — migration, model, API controller, Sanctum-protected routes, tests
-
-✅ **Analyze database** — schema, tables, columns, migrations, relationships
-
-✅ **Safe Artisan execution** — command whitelist, dangerous commands blocked, sensitive data redacted
-
-## Demo
-
-Once connected, ask your AI agent in any MCP-compatible client:
-
-```
-> Add a comment feature to the blog
-→ intentPlanner: parsed as create_feature/Comment
-→ createFeature: migration → model → controller → request → views → test
-→ workflowStatus: run persisted to .mcp/runs/
-
-> List the routes
-→ routeList: 47 routes, filterable by name
-
-> SQLSTATE[42P01] Table not found — how to fix?
-→ debugWorkflow: locate + diagnose + suggest fixes
-```
-
-## Tools
+### Generic domain
 
 | Tool | Description |
 |------|-------------|
-| `artisan` | Run any `php artisan` command (whitelist restricted) |
-| `migrateStatus` | Check migration status |
-| `envInfo` | Display APP_ENV, APP_DEBUG, DB connection |
+| `gitStatus` | Git status summary (branch, staged/unstaged changes) |
+| `fileSearch` | Search files by glob, excluding `.git` / `node_modules` / `vendor` |
+| `projectTree` | Two-level directory tree of the project |
+
+### Laravel domain
+
+| Tool | Description |
+|------|-------------|
+| `artisan` | Run whitelisted `php artisan` commands |
+| `migrateStatus` | Migration status |
+| `envInfo` / `envInfoSafe` | Environment info (safe variant redacts secrets) |
 | `cache` | Clear/cache config, routes, views |
-| `configGet` | Inspect config values by key |
-| `schema` | List database tables, view column definitions |
-| `model` | Scan Eloquent models in `app/Models` |
-| `log` | Tail the Laravel log file |
-| `routeList` | List routes with optional name/URI/method filter |
-| `runTest` | Run PHPUnit tests with optional filter |
-| `envInfoSafe` | Read .env filtering out sensitive values |
-| `frontendScanner` | Scan resources/views, js, css structure |
-| `makeModel` | Create a new Eloquent model with optional migration/factory |
-| `makeController` | Create a controller with optional resource/api/model binding |
-| `makeMigration` | Create a new migration file |
-| `migrationAnalyzer` | Parse migrations and extract schema (columns, types, FKs) |
-| `composerAnalyzer` | List project dependencies with version info |
-| `projectContext` | Get comprehensive project context (version, models, routes, packages) |
-| `crudGenerator` | Generate full CRUD: migration, model, controller, request, route, test |
-| `createFeature` | Generate full feature: CRUD + Blade views |
-| `apiGenerator` | Generate REST API: migration, model, API controller, routes, tests |
-| `debugWorkflow` | Analyze an error: locate, diagnose, suggest fixes |
-| `intentPlanner` | Parse a natural-language dev request into an executable plan |
-| `workflowStatus` | List/inspect/resume/rollback workflow runs |
+| `configGet` | Inspect config values |
+| `schema` | List tables / columns |
+| `model` | Scan Eloquent models |
+| `log` | Recent log entries |
+| `routeList` | Routes with name/URI/method filters |
+| `runTest` | Run PHPUnit tests |
+| `frontendScanner` | Scan views/js/css structure |
+| `makeModel` / `makeController` / `makeMigration` | Scaffold classes |
+| `migrationAnalyzer` | Parse migrations into schema |
+| `composerAnalyzer` | Project dependencies |
+| `projectContext` | Full project context (cached by file mtime) |
+| `crudGenerator` | Full CRUD generator |
+| `createFeature` | CRUD + Blade views |
+| `apiGenerator` | REST API generator (optional Sanctum auth) |
+| `debugWorkflow` | Error location, diagnosis, fix suggestions |
+| `intentPlanner` | Natural-language request → executable plan |
+| `workflowStatus` | List/inspect/resume/rollback runs |
 
-## Usage
-
-### Installation
+## Quick Start
 
 ```bash
-# From npm (demo version)
-npm install laravel-ai-agent@beta
+npm install
+npm start
+```
 
-# From GitHub (demo version)
-npm install github:dok4everak47/laravel-ai-agent
+Set the project path to work against:
+
+```bash
+# Any project (Node, Laravel, ...)
+CORTEX_PROJECT_PATH=/path/to/project npm start
+
+# Laravel-specific path resolution (backward compatible)
+LARAVEL_PROJECT_PATH=/path/to/laravel-app npm start
+
+# Nothing set → process.cwd()
+```
+
+Run the server with a single MCP request to see which tools a project exposes:
+
+```bash
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | \
+  CORTEX_PROJECT_PATH=/path/to/node-project npx tsx src/index.ts
+# → only generic tools
+
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | \
+  CORTEX_PROJECT_PATH=/path/to/laravel-app npx tsx src/index.ts
+# → generic + laravel tools
 ```
 
 ### With OpenCode
@@ -84,10 +88,11 @@ Add to `~/.config/opencode/opencode.jsonc`:
 
 ```jsonc
 {
-  "mcpServers": {
-    "laravel": {
+  "mcp": {
+    "cortex": {
       "type": "local",
-      "command": ["node", "/path/to/laravel-ai-agent/dist/index.js"]
+      "command": ["node", "/path/to/cortex-agent-runtime/dist/index.js"],
+      "environment": { "CORTEX_PROJECT_PATH": "/path/to/project" }
     }
   }
 }
@@ -100,9 +105,9 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "laravel": {
+    "cortex": {
       "command": "node",
-      "args": ["/path/to/laravel-ai-agent/dist/index.js"]
+      "args": ["/path/to/cortex-agent-runtime/dist/index.js"]
     }
   }
 }
@@ -112,17 +117,36 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LARAVEL_PROJECT_PATH` | `process.cwd()` | Path to Laravel project |
-| `PHP_PATH` | `php` | PHP executable path |
-| `LLM_API_KEY` | *(empty)* | Enables the LLM semantic layer for `intentPlanner` (e.g. DeepSeek/OpenAI key) |
+| `CORTEX_PROJECT_PATH` | — | Project path (takes priority) |
+| `LARAVEL_PROJECT_PATH` | `process.cwd()` | Backward-compatible Laravel project path |
+| `PHP_PATH` | `php` | PHP executable path (Laravel domain) |
+| `LLM_API_KEY` | *(empty)* | Enables the LLM semantic layer for `intentPlanner` |
 | `LLM_BASE_URL` | `https://api.deepseek.com/v1` | OpenAI-compatible API base URL |
 | `LLM_MODEL` | `deepseek-chat` | LLM model used for intent analysis |
+
+## Architecture
+
+```
+src/
+├── index.ts                 # entry: detect → load domains → register → start MCP
+├── core/                    # framework layer — project-type agnostic
+│   ├── registry.ts          # ToolRegistry: registerDomain / listTools / callTool
+│   ├── mcp.ts               # getConfig / getLogger / runCommand
+│   ├── logger.ts            # leveled logger
+│   ├── detector.ts          # detectDomains(projectPath) → DomainManifest[]
+│   ├── glob.ts              # minimal `*` / `**` glob
+│   └── context/             # generic context interface
+└── domains/
+    ├── generic/             # always loaded: gitStatus / fileSearch / projectTree
+    └── laravel/             # tools / workflows / context / security / planner / manifest
+```
+
+Each domain exports a `DomainManifest` (`id`, `name`, `detect`, `getTools`, `getHandlers`, `getProjectPath?`). The Laravel domain keeps its own runtime (`domains/laravel/mcp.ts`), tools, workflows, context, security, and planner — the pre-existing 24-tool surface is unchanged.
 
 ## Requirements
 
 - Node.js 18+
-- PHP 8.1+ (for Laravel project interaction)
-- A Laravel project with `artisan` in its root
+- PHP 8.1+ (for the Laravel domain)
 
 ## Development
 
@@ -134,17 +158,6 @@ npm run build       # compile to dist/
 npm start           # node dist/index.js
 npm run dev         # npx tsx src/index.ts (hot reload)
 ```
-
-## Security Model
-
-✓ **Local only** — runs entirely on your machine, no server component
-✓ **No telemetry** — sends zero usage data
-✓ **No external API by default** — works fully offline; the LLM semantic layer only makes network calls when `LLM_API_KEY` is set
-✓ **Command whitelist** — artisan restricted to safe commands
-✓ **Dangerous commands blocked** — db:wipe, migrate:fresh, tinker, shell
-✓ **Sensitive data redaction** — .env values filtered before returning
-
-See [SECURITY.md](./SECURITY.md) for details.
 
 ## License
 

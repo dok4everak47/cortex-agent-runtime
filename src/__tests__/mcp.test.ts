@@ -1,6 +1,6 @@
 import { describe, it } from "node:test"
 import assert from "node:assert"
-import { TOOL_DEFINITIONS, toolHandlers, handleToolCall } from "../tool-registry.js"
+import { TOOL_DEFINITIONS, toolHandlers, handleToolCall } from "../core/registry.js"
 
 describe("Tool definitions", () => {
   it("has all expected tools registered", () => {

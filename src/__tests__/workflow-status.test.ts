@@ -3,8 +3,8 @@ import assert from "node:assert"
 import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "fs"
 import { join } from "path"
 import { tmpdir } from "os"
-import { RunStateStore } from "../workflows/run-state.js"
-import { executeWorkflowStatus } from "../tools/workflow-status.js"
+import { RunStateStore } from "../domains/laravel/workflows/run-state.js"
+import { executeWorkflowStatus } from "../domains/laravel/tools/workflow-status.js"
 
 function makeProject(): string {
   const p = mkdtempSync(join(tmpdir(), "wf-status-"))

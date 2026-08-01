@@ -38,7 +38,7 @@ describe("context builder modules", () => {
       devDependencies: { vue: "^3.4", vite: "^5.0" },
     }))
 
-    mock.module("../mcp.js", {
+    mock.module("../domains/laravel/mcp.js", {
       exports: {
         getConfig: () => ({ projectPath: activeProject, phpPath: "php" }),
         runArtisan: (sub: string) => {
@@ -77,7 +77,7 @@ describe("context builder modules", () => {
 
   it("builds a complete context and writes all 5 module files", async () => {
     activeProject = tmpDir
-    const { buildContext } = await import("../context/builder.js")
+    const { buildContext } = await import("../domains/laravel/context/builder.js")
     const ctx = await buildContext(tmpDir)
 
     assert.equal(ctx.laravel.version, "Laravel Framework 11.31.0")
@@ -103,7 +103,7 @@ describe("context builder modules", () => {
 
   it("serves every module from cache on a second build", async () => {
     activeProject = tmpDir
-    const { buildContext } = await import("../context/builder.js")
+    const { buildContext } = await import("../domains/laravel/context/builder.js")
     const beforeCalls = tinkerCalls
     const ctx = await buildContext(tmpDir)
     assert.equal(ctx.source, "cache")
@@ -112,7 +112,7 @@ describe("context builder modules", () => {
 
   it("rebuilds only the schema module when a migration changes", async () => {
     activeProject = tmpDir
-    const { buildContext } = await import("../context/builder.js")
+    const { buildContext } = await import("../domains/laravel/context/builder.js")
     writeFileSync(join(tmpDir, "database", "migrations", "2026_07_30_test.php"), "<?php")
     const beforeCalls = tinkerCalls
     const ctx = await buildContext(tmpDir)
@@ -123,7 +123,7 @@ describe("context builder modules", () => {
 
   it("rebuilds only the models module when a model changes", async () => {
     activeProject = tmpDir
-    const { buildContext } = await import("../context/builder.js")
+    const { buildContext } = await import("../domains/laravel/context/builder.js")
     writeFileSync(join(tmpDir, "app", "Models", "Comment.php"), "<?php")
     const beforeCalls = tinkerCalls
     const ctx = await buildContext(tmpDir)
@@ -134,7 +134,7 @@ describe("context builder modules", () => {
 
   it("buildContextModule reuses a fresh module cache", async () => {
     activeProject = tmpDir
-    const { buildContextModule } = await import("../context/builder.js")
+    const { buildContextModule } = await import("../domains/laravel/context/builder.js")
     const first = await buildContextModule("routes", tmpDir) as { count: number }
     const beforeCalls = tinkerCalls
     const second = await buildContextModule("routes", tmpDir) as { count: number }
@@ -144,7 +144,7 @@ describe("context builder modules", () => {
 
   it("tolerates collector failures with fallbacks", async () => {
     activeProject = "/nonexistent-project"
-    const { buildContext } = await import("../context/builder.js")
+    const { buildContext } = await import("../domains/laravel/context/builder.js")
     const ctx = await buildContext("/nonexistent-project")
 
     assert.equal(ctx.laravel.version, "")

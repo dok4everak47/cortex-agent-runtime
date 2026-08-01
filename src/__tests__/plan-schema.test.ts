@@ -1,6 +1,6 @@
 import { describe, it } from "node:test"
 import assert from "node:assert"
-import type { Intent, Plan, PlannedAction, PlanStep, RelationType } from "../planner/plan-schema.js"
+import type { Intent, Plan, PlannedAction, PlanStep, RelationType } from "../domains/laravel/planner/plan-schema.js"
 
 const ALL_ACTIONS: PlannedAction[] = [
   "create_feature",
@@ -31,9 +31,9 @@ function mockContext() {
 
 describe("plan-schema", () => {
   it("exports the full set of planned actions", async () => {
-    const mod = await import("../planner/plan-schema.js")
+    const mod = await import("../domains/laravel/planner/plan-schema.js")
     assert.ok(mod)
-    const { parseIntent } = await import("../planner/intent-parser.js")
+    const { parseIntent } = await import("../domains/laravel/planner/intent-parser.js")
     const parsed: PlannedAction[] = ALL_ACTIONS.map((action) => {
       const input =
         action === "debug"
@@ -56,8 +56,8 @@ describe("plan-schema", () => {
   })
 
   it("produces PlanSteps with valid shape and dependencies", async () => {
-    const { parseIntent } = await import("../planner/intent-parser.js")
-    const { makeFeaturePlan } = await import("../planner/feature-planner.js")
+    const { parseIntent } = await import("../domains/laravel/planner/intent-parser.js")
+    const { makeFeaturePlan } = await import("../domains/laravel/planner/feature-planner.js")
     const plan: Plan = await makeFeaturePlan(parseIntent("给博客增加评论功能"), "/tmp/x", async () => mockContext())
 
     plan.steps.forEach((s: PlanStep, idx: number) => {
@@ -70,14 +70,14 @@ describe("plan-schema", () => {
   })
 
   it("constrains relation types to the schema set", async () => {
-    const { parseIntent } = await import("../planner/intent-parser.js")
+    const { parseIntent } = await import("../domains/laravel/planner/intent-parser.js")
     const intent: Intent = parseIntent("Post 和 User 建立多对多关系")
     assert.ok(intent.options.relation)
     assert.ok(RELATION_TYPES.includes(intent.options.relation.type))
   })
 
   it("marks each action with a confidence in [0,1]", async () => {
-    const { parseIntent } = await import("../planner/intent-parser.js")
+    const { parseIntent } = await import("../domains/laravel/planner/intent-parser.js")
     for (const input of ["给博客增加评论功能", "给 Post 生成 CRUD", "为 Tag 创建 REST API", "这个报错怎么解决"]) {
       const intent: Intent = parseIntent(input)
       assert.ok(intent.confidence >= 0 && intent.confidence <= 1)

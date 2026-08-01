@@ -21,7 +21,7 @@ describe("envInfoSafe", () => {
       "SESSION_DRIVER=file",
     ].join("\n"))
 
-    mock.module("../mcp.js", {
+    mock.module("../domains/laravel/mcp.js", {
       exports: {
         getConfig: () => ({ projectPath: tmpDir, phpPath: "php" }),
         getLogger: () => ({ debug: () => {}, info: () => {}, warn: () => {}, error: () => {} }),
@@ -34,7 +34,7 @@ describe("envInfoSafe", () => {
   })
 
   it("filters sensitive values from .env", async () => {
-    const { executeEnvInfoSafe } = await import("../tools/env-info-safe.js")
+    const { executeEnvInfoSafe } = await import("../domains/laravel/tools/env-info-safe.js")
     const result = executeEnvInfoSafe()
     assert.equal(result.isError, false)
     assert.ok(result.content[0].text.includes("APP_NAME=Laravel"))
@@ -45,7 +45,7 @@ describe("envInfoSafe", () => {
   })
 
   it("redacts APP_KEY, DB_PASSWORD, and SECRET values", async () => {
-    const { executeEnvInfoSafe } = await import("../tools/env-info-safe.js")
+    const { executeEnvInfoSafe } = await import("../domains/laravel/tools/env-info-safe.js")
     const result = executeEnvInfoSafe()
     assert.equal(result.isError, false)
     assert.ok(result.content[0].text.includes("APP_KEY=[REDACTED]"))
@@ -61,7 +61,7 @@ describe("envInfoSafe", () => {
   it("returns error when .env file is missing", async () => {
     rmSync(join(tmpDir, ".env"))
     assert.ok(!existsSync(join(tmpDir, ".env")))
-    const { executeEnvInfoSafe } = await import("../tools/env-info-safe.js")
+    const { executeEnvInfoSafe } = await import("../domains/laravel/tools/env-info-safe.js")
     const result = executeEnvInfoSafe()
     assert.ok(result.isError)
     assert.ok(result.content[0].text.includes(".env file not found"))

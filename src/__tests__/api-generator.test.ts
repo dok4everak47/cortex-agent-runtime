@@ -3,14 +3,14 @@ import assert from "node:assert"
 
 describe("apiGenerator", () => {
   it("returns error for missing entity", async () => {
-    const mod = await import("../workflows/api-generator.js")
+    const mod = await import("../domains/laravel/workflows/api-generator.js")
     const result = await mod.executeApiGenerator({})
     assert.ok(result.isError)
     assert.ok(result.content[0].text.includes("entity"))
   })
 
   it("makeApiPlan produces six steps with api steps", async () => {
-    const { makeApiPlan } = await import("../workflows/api/planner.js")
+    const { makeApiPlan } = await import("../domains/laravel/workflows/api/planner.js")
     const plan = makeApiPlan("Tag", "name:string", true)
     assert.equal(plan.length, 6)
     assert.deepEqual(plan.map(p => p.type), [
@@ -25,7 +25,7 @@ describe("apiGenerator", () => {
   })
 
   it("generateApiTestContent builds JSON feature tests", async () => {
-    const { generateApiTestContent } = await import("../workflows/api/steps/test.js")
+    const { generateApiTestContent } = await import("../domains/laravel/workflows/api/steps/test.js")
     const content = generateApiTestContent("Tag", "tag", "tags", [{ name: "name", type: "string" }], false, [])
     assert.ok(content.includes("class TagApiTest extends TestCase"))
     assert.ok(content.includes("getJson('/api/tags')"))
@@ -37,7 +37,7 @@ describe("apiGenerator", () => {
   })
 
   it("generateApiTestContent adds sanctum auth when auth=true", async () => {
-    const { generateApiTestContent } = await import("../workflows/api/steps/test.js")
+    const { generateApiTestContent } = await import("../domains/laravel/workflows/api/steps/test.js")
     const content = generateApiTestContent("Tag", "tag", "tags", [{ name: "name", type: "string" }], true, [])
     assert.ok(content.includes("use Laravel\\Sanctum\\Sanctum;"))
     assert.ok(content.includes("Sanctum::actingAs($user);"))
@@ -45,7 +45,7 @@ describe("apiGenerator", () => {
   })
 
   it("handles non-existent laravel project gracefully", async () => {
-    const mod = await import("../workflows/api-generator.js")
+    const mod = await import("../domains/laravel/workflows/api-generator.js")
     const origPath = process.env.LARAVEL_PROJECT_PATH
     process.env.LARAVEL_PROJECT_PATH = "/tmp/non-existent-project-api-xxxx"
 

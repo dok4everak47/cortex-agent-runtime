@@ -3,14 +3,14 @@ import assert from "node:assert"
 
 describe("debugWorkflow", () => {
   it("returns error for missing error", async () => {
-    const mod = await import("../workflows/debug-workflow.js")
+    const mod = await import("../domains/laravel/workflows/debug-workflow.js")
     const result = await mod.executeDebugWorkflow({})
     assert.ok(result.isError)
     assert.ok(result.content[0].text.includes("error"))
   })
 
   it("diagnoseError maps known error patterns", async () => {
-    const { diagnoseError } = await import("../workflows/debug/steps/diagnose.js")
+    const { diagnoseError } = await import("../domains/laravel/workflows/debug/steps/diagnose.js")
 
     const db = diagnoseError("SQLSTATE[42P01]: Table not found")
     assert.ok(db.some(d => d.pattern === "SQLSTATE / PDOException"))
@@ -31,14 +31,14 @@ describe("debugWorkflow", () => {
   })
 
   it("diagnoseError falls back to unknown pattern", async () => {
-    const { diagnoseError } = await import("../workflows/debug/steps/diagnose.js")
+    const { diagnoseError } = await import("../domains/laravel/workflows/debug/steps/diagnose.js")
     const result = diagnoseError("Something totally unexpected happened")
     assert.equal(result.length, 1)
     assert.equal(result[0].pattern, "Unknown")
   })
 
   it("extractFileFromError extracts file and line", async () => {
-    const { extractFileFromError } = await import("../workflows/debug/planner.js")
+    const { extractFileFromError } = await import("../domains/laravel/workflows/debug/planner.js")
 
     const abs = extractFileFromError("#0 /home/user/blog/app/Http/Controllers/PostController.php:45")
     assert.deepEqual(abs, { file: "/home/user/blog/app/Http/Controllers/PostController.php", line: 45 })
@@ -53,7 +53,7 @@ describe("debugWorkflow", () => {
   })
 
   it("extractErrorMessage strips exception prefix", async () => {
-    const { extractErrorMessage } = await import("../workflows/debug/planner.js")
+    const { extractErrorMessage } = await import("../domains/laravel/workflows/debug/planner.js")
     assert.equal(
       extractErrorMessage("Illuminate\\Database\\QueryException: SQLSTATE[42P01] Table not found"),
       "SQLSTATE[42P01] Table not found",
@@ -63,14 +63,14 @@ describe("debugWorkflow", () => {
   })
 
   it("makeDebugPlan has four steps in order", async () => {
-    const { makeDebugPlan } = await import("../workflows/debug/planner.js")
+    const { makeDebugPlan } = await import("../domains/laravel/workflows/debug/planner.js")
     const plan = makeDebugPlan("SQLSTATE[42P01]: Table not found")
     assert.equal(plan.length, 4)
     assert.deepEqual(plan.map(p => p.type), ["locate", "analyze", "diagnose", "suggest"])
   })
 
   it("executes against non-existent project and still diagnoses", async () => {
-    const mod = await import("../workflows/debug-workflow.js")
+    const mod = await import("../domains/laravel/workflows/debug-workflow.js")
     const origPath = process.env.LARAVEL_PROJECT_PATH
     process.env.LARAVEL_PROJECT_PATH = "/tmp/non-existent-project-debug-xxxx"
 
@@ -90,8 +90,8 @@ describe("debugWorkflow", () => {
   })
 
   it("analyzes a real file when a path is provided", async () => {
-    const { executeDebugPlan } = await import("../workflows/debug/executor.js")
-    const { resolveFile, execute: locateExecute } = await import("../workflows/debug/steps/locate.js")
+    const { executeDebugPlan } = await import("../domains/laravel/workflows/debug/executor.js")
+    const { resolveFile, execute: locateExecute } = await import("../domains/laravel/workflows/debug/steps/locate.js")
     const { writeFileSync, mkdirSync, rmSync } = await import("fs")
     const { join } = await import("path")
 
@@ -106,15 +106,15 @@ describe("debugWorkflow", () => {
       const locateResult = await locateExecute({ hint: "app/Models/Post.php" }, tmp)
       assert.equal(locateResult.status, "done")
 
-      const analyze = await import("../workflows/debug/steps/analyze.js")
+      const analyze = await import("../domains/laravel/workflows/debug/steps/analyze.js")
       const analyzeResult = await analyze.execute({ file: locateResult.file, line: 5 }, tmp)
       assert.equal(analyzeResult.status, "done")
       assert.ok((analyzeResult.content as string).includes("Server test marker"))
       assert.ok(Array.isArray(analyzeResult.snippet))
 
-      const { execute: diagnoseExecute } = await import("../workflows/debug/steps/diagnose.js")
+      const { execute: diagnoseExecute } = await import("../domains/laravel/workflows/debug/steps/diagnose.js")
       const diag = await diagnoseExecute({ error: "SQLSTATE[42P01]: Table not found" }, tmp)
-      const { execute: suggestExecute } = await import("../workflows/debug/steps/suggest.js")
+      const { execute: suggestExecute } = await import("../domains/laravel/workflows/debug/steps/suggest.js")
       const suggest = await suggestExecute(
         { locate: locateResult, analyze: analyzeResult, diagnose: diag },
         tmp,

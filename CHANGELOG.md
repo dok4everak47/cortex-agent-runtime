@@ -2,6 +2,20 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/) 规范，版本号遵循 [Semantic Versioning](https://semver.org/)。
 
+## [1.0.0-beta.1] - 2026-08-01
+
+### Added
+- 泛化重构为 **cortex-agent-runtime**：MCP-native AI Agent Framework，项目类型无关
+- core + domains 双层架构（`src/core/` 框架层 + `src/domains/` 项目域）
+- 新域 `generic`：gitStatus / fileSearch / projectTree 三个语言无关工具
+- `core/detector.ts` 项目类型检测（generic 永远加载；laravel 需 composer.json + artisan）
+- `CORTEX_PROJECT_PATH` 环境变量（优先于 `LARAVEL_PROJECT_PATH`）
+
+### Changed
+- 目录改名 `laravel-ai-agent` → `cortex-agent-runtime`（npm/GitHub 同步）
+- Laravel 域整体搬迁到 `src/domains/laravel/`，工具名与行为不变
+- `tool-registry.ts` → `core/registry.ts`（ToolRegistry 域注册制）
+
 ## [0.9.0] - 2026-07-31 (demo)
 
 ### Added

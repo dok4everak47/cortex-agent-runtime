@@ -3,13 +3,13 @@ import assert from "node:assert"
 
 describe("projectContext tool", () => {
   before(() => {
-    mock.module("../mcp.js", {
+    mock.module("../domains/laravel/mcp.js", {
       exports: {
         getConfig: () => ({ projectPath: "/tmp/fake", phpPath: "php" }),
         getLogger: () => ({ debug: () => {}, info: () => {}, warn: () => {}, error: () => {} }),
       },
     })
-    mock.module("../context/context-manager.js", {
+    mock.module("../domains/laravel/context/context-manager.js", {
       exports: {
         contextManager: {
           getContext: async (_projectPath: string, force: boolean) => ({
@@ -30,7 +30,7 @@ describe("projectContext tool", () => {
   })
 
   it("returns serialized context json", async () => {
-    const { executeProjectContext } = await import("../tools/project-context.js")
+    const { executeProjectContext } = await import("../domains/laravel/tools/project-context.js")
     const result = await executeProjectContext({})
     assert.equal(result.isError, false)
     assert.ok(result.content[0].text.includes('"source": "cache"'))
@@ -38,7 +38,7 @@ describe("projectContext tool", () => {
   })
 
   it("passes force flag through to the manager", async () => {
-    const { executeProjectContext } = await import("../tools/project-context.js")
+    const { executeProjectContext } = await import("../domains/laravel/tools/project-context.js")
     const result = await executeProjectContext({ force: true })
     assert.equal(result.isError, false)
     assert.ok(result.content[0].text.includes('"source": "realtime"'))

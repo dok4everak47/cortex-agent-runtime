@@ -3,7 +3,7 @@ import assert from "node:assert"
 import { mkdtempSync, writeFileSync, rmSync } from "fs"
 import { join } from "path"
 import { tmpdir } from "os"
-import { analyzeComposer } from "../tools/composer-analyzer.js"
+import { analyzeComposer } from "../domains/laravel/tools/composer-analyzer.js"
 
 describe("composer-analyzer – analyzeComposer", () => {
   let tmpDir: string

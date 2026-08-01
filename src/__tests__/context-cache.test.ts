@@ -3,7 +3,7 @@ import assert from "node:assert"
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "fs"
 import { join } from "path"
 import { tmpdir } from "os"
-import { readCache, writeCache, isExpired } from "../context/cache.js"
+import { readCache, writeCache, isExpired } from "../domains/laravel/context/cache.js"
 
 const BASE = {
   laravel: { version: "v", phpVersion: "p", environment: "local", debug: false, database: { driver: "", name: "" }, framework: "Laravel" },

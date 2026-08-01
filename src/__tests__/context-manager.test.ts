@@ -23,7 +23,7 @@ describe("ContextManager", () => {
   before(async () => {
     tmpDir = mkdtempSync(join(tmpdir(), "ctx-manager-"))
 
-    mock.module("../context/builder.js", {
+    mock.module("../domains/laravel/context/builder.js", {
       exports: {
         getContext: async () => {
           buildCalls++
@@ -38,14 +38,14 @@ describe("ContextManager", () => {
   })
 
   it("delegates to the module-based getContext", async () => {
-    const { ContextManager } = await import("../context/context-manager.js")
+    const { ContextManager } = await import("../domains/laravel/context/context-manager.js")
     const ctx = await new ContextManager().getContext(tmpDir)
     assert.equal(ctx.source, "realtime")
     assert.equal(buildCalls, 1)
   })
 
   it("force rebuild clears the module cache directory before building", async () => {
-    const { ContextManager } = await import("../context/context-manager.js")
+    const { ContextManager } = await import("../domains/laravel/context/context-manager.js")
     mkdirSync(join(tmpDir, ".mcp", "context"), { recursive: true })
     writeFileSync(join(tmpDir, ".mcp", "context", "models.json"), "{}")
     assert.ok(existsSync(join(tmpDir, ".mcp", "context", "models.json")))
@@ -56,7 +56,7 @@ describe("ContextManager", () => {
   })
 
   it("invalidate clears the whole module cache directory", async () => {
-    const { ContextManager } = await import("../context/context-manager.js")
+    const { ContextManager } = await import("../domains/laravel/context/context-manager.js")
     mkdirSync(join(tmpDir, ".mcp", "context"), { recursive: true })
     writeFileSync(join(tmpDir, ".mcp", "context", "routes.json"), "{}")
     assert.ok(existsSync(join(tmpDir, ".mcp", "context", "routes.json")))

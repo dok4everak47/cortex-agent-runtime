@@ -1,6 +1,6 @@
 import { describe, it } from "node:test"
 import assert from "node:assert"
-import { isArtisanAllowed, ALLOWED_ARTISAN_COMMANDS, executeArtisan } from "../tools/artisan.js"
+import { isArtisanAllowed, ALLOWED_ARTISAN_COMMANDS, executeArtisan } from "../domains/laravel/tools/artisan.js"
 
 describe("artisan – isArtisanAllowed (pure function)", () => {
   it("allows whitelisted commands", () => {

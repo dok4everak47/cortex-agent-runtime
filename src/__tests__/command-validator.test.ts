@@ -1,6 +1,6 @@
 import { describe, it } from "node:test"
 import assert from "node:assert"
-import { validateArguments } from "../security/command-validator.js"
+import { validateArguments } from "../domains/laravel/security/command-validator.js"
 
 describe("validateArguments", () => {
   it("allows safe commands", () => {

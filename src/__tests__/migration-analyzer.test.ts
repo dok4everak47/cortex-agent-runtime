@@ -3,7 +3,7 @@ import assert from "node:assert"
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from "fs"
 import { join } from "path"
 import { tmpdir } from "os"
-import { parseColumn, parseForeignId, analyzeMigrations } from "../tools/migration-analyzer.js"
+import { parseColumn, parseForeignId, analyzeMigrations } from "../domains/laravel/tools/migration-analyzer.js"
 
 describe("migration-analyzer – parseColumn", () => {
   it("parses a simple string column", () => {

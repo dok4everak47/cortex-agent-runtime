@@ -3,21 +3,21 @@ import assert from "node:assert"
 
 describe("crudGenerator", () => {
   it("returns error for missing entity", async () => {
-    const mod = await import("../workflows/crud-generator.js")
+    const mod = await import("../domains/laravel/workflows/crud-generator.js")
     const result = await mod.executeCrudGenerator({})
     assert.ok(result.isError)
     assert.ok(result.content[0].text.includes("entity"))
   })
 
   it("returns error for empty entity", async () => {
-    const mod = await import("../workflows/crud-generator.js")
+    const mod = await import("../domains/laravel/workflows/crud-generator.js")
     const result = await mod.executeCrudGenerator({ entity: "" })
     assert.ok(result.isError)
     assert.ok(result.content[0].text.includes("entity"))
   })
 
   it("handles non-existent laravel project gracefully", async () => {
-    const mod = await import("../workflows/crud-generator.js")
+    const mod = await import("../domains/laravel/workflows/crud-generator.js")
 
     const origPath = process.env.LARAVEL_PROJECT_PATH
     process.env.LARAVEL_PROJECT_PATH = "/tmp/non-existent-project-xxxx"

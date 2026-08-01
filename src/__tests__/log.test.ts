@@ -6,7 +6,7 @@ describe("log", () => {
 
   before(() => {
     mockRun = () => "[2024-01-01] log entry\n[2024-01-02] another entry"
-    mock.module("../mcp.js", {
+    mock.module("../domains/laravel/mcp.js", {
       exports: {
         runCommand: (cmd: string) => mockRun(cmd),
         getLogger: () => ({ debug: () => {}, info: () => {}, warn: () => {}, error: () => {} }),
@@ -15,7 +15,7 @@ describe("log", () => {
   })
 
   it("uses default of 100 lines when no lines argument", async () => {
-    const { executeLog } = await import("../tools/log.js")
+    const { executeLog } = await import("../domains/laravel/tools/log.js")
     const result = executeLog({})
     assert.equal(result.isError, false)
     assert.ok(result.content[0].text.includes("log entry"))
@@ -23,7 +23,7 @@ describe("log", () => {
 
   it("passes custom lines count to tail command", async () => {
     mockRun = (cmd: string) => cmd
-    const { executeLog } = await import("../tools/log.js")
+    const { executeLog } = await import("../domains/laravel/tools/log.js")
     const result = executeLog({ lines: 50 })
     assert.equal(result.isError, false)
     assert.ok(result.content[0].text.includes("tail -n 50"))
@@ -31,7 +31,7 @@ describe("log", () => {
 
   it("falls back for empty log file", async () => {
     mockRun = () => ""
-    const { executeLog } = await import("../tools/log.js")
+    const { executeLog } = await import("../domains/laravel/tools/log.js")
     const result = executeLog({})
     assert.equal(result.isError, false)
     assert.equal(result.content[0].text, "(log file is empty)")

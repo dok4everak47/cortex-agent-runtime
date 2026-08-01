@@ -1,6 +1,6 @@
 import { describe, it } from "node:test"
 import assert from "node:assert"
-import { redactLine, redactText } from "../security/redactor.js"
+import { redactLine, redactText } from "../domains/laravel/security/redactor.js"
 
 describe("redactLine", () => {
   it("keeps safe keys unchanged", () => {

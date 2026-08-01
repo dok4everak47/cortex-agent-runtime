@@ -7,14 +7,14 @@ describe("registerContextResource", () => {
   let getContext: (projectPath: string) => Promise<{ laravel: { version: string }; app: { name: string }; projectPath: string }>
 
   before(async () => {
-    mock.module("../mcp.js", {
+    mock.module("../domains/laravel/mcp.js", {
       exports: {
         getConfig: () => ({ projectPath: "/tmp/fake-project", phpPath: "php" }),
         getLogger: () => ({ debug: () => {}, info: () => {}, warn: () => {}, error: () => {} }),
       },
     })
 
-    const { registerContextResource } = await import("../context/resource.js")
+    const { registerContextResource } = await import("../domains/laravel/context/resource.js")
     handlers = {} as typeof handlers
     getContext = async (projectPath: string) => ({ laravel: { version: "11.0" }, app: { name: "blog" }, projectPath })
 

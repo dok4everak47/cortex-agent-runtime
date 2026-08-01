@@ -18,7 +18,7 @@ describe("frontendScanner", () => {
     writeFileSync(join(tmpDir, "resources", "js", "app.js"), "")
     writeFileSync(join(tmpDir, "resources", "css", "app.css"), "")
 
-    mock.module("../mcp.js", {
+    mock.module("../domains/laravel/mcp.js", {
       exports: {
         getConfig: () => ({ projectPath: tmpDir, phpPath: "php" }),
         getLogger: () => ({ debug: () => {}, info: () => {}, warn: () => {}, error: () => {} }),
@@ -31,7 +31,7 @@ describe("frontendScanner", () => {
   })
 
   it("scans resources directory tree", async () => {
-    const { executeFrontendScanner } = await import("../tools/frontend-scanner.js")
+    const { executeFrontendScanner } = await import("../domains/laravel/tools/frontend-scanner.js")
     const result = executeFrontendScanner()
     assert.equal(result.isError, false)
     assert.ok(result.content[0].text.includes("Views"))
@@ -40,14 +40,14 @@ describe("frontendScanner", () => {
   })
 
   it("includes view files in output", async () => {
-    const { executeFrontendScanner } = await import("../tools/frontend-scanner.js")
+    const { executeFrontendScanner } = await import("../domains/laravel/tools/frontend-scanner.js")
     const result = executeFrontendScanner()
     assert.ok(result.content[0].text.includes("index.blade.php"))
     assert.ok(result.content[0].text.includes("show.blade.php"))
   })
 
   it("handles nested directories", async () => {
-    const { executeFrontendScanner } = await import("../tools/frontend-scanner.js")
+    const { executeFrontendScanner } = await import("../domains/laravel/tools/frontend-scanner.js")
     const result = executeFrontendScanner()
     assert.ok(result.content[0].text.includes("admin/"))
     assert.ok(result.content[0].text.includes("dashboard.blade.php"))
@@ -56,7 +56,7 @@ describe("frontendScanner", () => {
   it("shows empty message for missing sections", async () => {
     rmSync(join(tmpDir, "resources", "js"), { recursive: true, force: true })
     rmSync(join(tmpDir, "resources", "css"), { recursive: true, force: true })
-    const { executeFrontendScanner } = await import("../tools/frontend-scanner.js")
+    const { executeFrontendScanner } = await import("../domains/laravel/tools/frontend-scanner.js")
     const result = executeFrontendScanner()
     assert.equal(result.isError, false)
     assert.ok(result.content[0].text.includes("(empty or not found)"))
@@ -64,7 +64,7 @@ describe("frontendScanner", () => {
 
   it("returns error when resources/ directory is missing", async () => {
     rmSync(join(tmpDir, "resources"), { recursive: true, force: true })
-    const { executeFrontendScanner } = await import("../tools/frontend-scanner.js")
+    const { executeFrontendScanner } = await import("../domains/laravel/tools/frontend-scanner.js")
     const result = executeFrontendScanner()
     assert.ok(result.isError)
     assert.ok(result.content[0].text.includes("not found"))

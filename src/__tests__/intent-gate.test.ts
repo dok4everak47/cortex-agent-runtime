@@ -1,8 +1,8 @@
 import { describe, it } from "node:test"
 import assert from "node:assert"
-import type { IntentPlannerHandlerDeps, Intent } from "../planner/index.js"
-import type { Plan } from "../planner/plan-schema.js"
-import type { ProjectContext } from "../context/types.js"
+import type { IntentPlannerHandlerDeps, Intent } from "../domains/laravel/planner/index.js"
+import type { Plan } from "../domains/laravel/planner/plan-schema.js"
+import type { ProjectContext } from "../domains/laravel/context/types.js"
 
 type ToolResult = { content: { type: "text"; text: string }[]; isError?: boolean }
 
@@ -71,7 +71,7 @@ function parseResult(result: ToolResult): Record<string, unknown> {
 
 describe("intentPlanner IntentGate", () => {
   it("dryRun=true → mode=plan, does not execute", async () => {
-    const { handleIntentPlanner } = await import("../planner/index.js")
+    const { handleIntentPlanner } = await import("../domains/laravel/planner/index.js")
     const { deps, calls } = makeDeps()
     const result = parseResult(await handleIntentPlanner({ request: "Create a Post CRUD", dryRun: true }, deps))
     assert.equal(result.mode, "plan")
@@ -80,7 +80,7 @@ describe("intentPlanner IntentGate", () => {
   })
 
   it("dryRun defaults to true when omitted → mode=plan", async () => {
-    const { handleIntentPlanner } = await import("../planner/index.js")
+    const { handleIntentPlanner } = await import("../domains/laravel/planner/index.js")
     const { deps, calls } = makeDeps()
     const result = parseResult(await handleIntentPlanner({ request: "Create a Post CRUD" }, deps))
     assert.equal(result.mode, "plan")
@@ -88,7 +88,7 @@ describe("intentPlanner IntentGate", () => {
   })
 
   it("dryRun=false without confirmed → mode=awaiting_confirmation, does not execute", async () => {
-    const { handleIntentPlanner } = await import("../planner/index.js")
+    const { handleIntentPlanner } = await import("../domains/laravel/planner/index.js")
     const { deps, calls } = makeDeps()
     const result = parseResult(await handleIntentPlanner({ request: "Create a Post CRUD", dryRun: false }, deps))
     assert.equal(result.mode, "awaiting_confirmation")
@@ -99,7 +99,7 @@ describe("intentPlanner IntentGate", () => {
   })
 
   it("low-confidence intent also requires confirmation (unified safety gate)", async () => {
-    const { handleIntentPlanner } = await import("../planner/index.js")
+    const { handleIntentPlanner } = await import("../domains/laravel/planner/index.js")
     const { deps, calls } = makeDeps({
       parseIntent: async (input: string): Promise<Intent> => ({
         action: "enhance",
@@ -115,7 +115,7 @@ describe("intentPlanner IntentGate", () => {
   })
 
   it("dryRun=false with confirmed=true → mode=executed and executes", async () => {
-    const { handleIntentPlanner } = await import("../planner/index.js")
+    const { handleIntentPlanner } = await import("../domains/laravel/planner/index.js")
     const { deps, calls } = makeDeps()
     const result = parseResult(
       await handleIntentPlanner({ request: "Create a Post CRUD", dryRun: false, confirmed: true }, deps),
@@ -126,7 +126,7 @@ describe("intentPlanner IntentGate", () => {
   })
 
   it("create action without entity stays in plan mode even when confirmed", async () => {
-    const { handleIntentPlanner } = await import("../planner/index.js")
+    const { handleIntentPlanner } = await import("../domains/laravel/planner/index.js")
     const { deps, calls } = makeDeps({
       parseIntent: async (input: string): Promise<Intent> => ({
         action: "create_crud",
@@ -144,7 +144,7 @@ describe("intentPlanner IntentGate", () => {
   })
 
   it("missing request returns an error", async () => {
-    const { handleIntentPlanner } = await import("../planner/index.js")
+    const { handleIntentPlanner } = await import("../domains/laravel/planner/index.js")
     const { deps } = makeDeps()
     const result = await handleIntentPlanner({}, deps)
     assert.equal(result.isError, true)
@@ -153,8 +153,8 @@ describe("intentPlanner IntentGate", () => {
 
 describe("intentPlanner summary", () => {
   it("summary lists step types and risky route modification", async () => {
-    const { parseIntent } = await import("../planner/intent-parser.js")
-    const { makeFeaturePlan } = await import("../planner/feature-planner.js")
+    const { parseIntent } = await import("../domains/laravel/planner/intent-parser.js")
+    const { makeFeaturePlan } = await import("../domains/laravel/planner/feature-planner.js")
     const plan = await makeFeaturePlan(parseIntent("给 Post 生成 CRUD"), "/tmp/x", async () => mockContext())
     assert.ok(plan.summary.includes("计划步骤"))
     assert.ok(plan.summary.includes("migration → model → controller → request → route → test"))
@@ -163,8 +163,8 @@ describe("intentPlanner summary", () => {
   })
 
   it("summary annotates skipped steps for existing tables", async () => {
-    const { parseIntent } = await import("../planner/intent-parser.js")
-    const { makeFeaturePlan } = await import("../planner/feature-planner.js")
+    const { parseIntent } = await import("../domains/laravel/planner/intent-parser.js")
+    const { makeFeaturePlan } = await import("../domains/laravel/planner/feature-planner.js")
     const ctx = mockContext({ models: ["Comment", "Post", "User"], tables: ["comments", "posts", "users"] })
     const plan = await makeFeaturePlan(parseIntent("给博客增加评论功能"), "/tmp/x", async () => ctx)
     assert.ok(plan.summary.includes("模型已存在"))

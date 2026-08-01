@@ -1,13 +1,16 @@
 {
-  "name": "laravel-ai-agent",
-  "version": "0.9.1",
+  "name": "cortex-agent-runtime",
+  "version": "1.0.0-beta.1",
   "type": "module",
-  "description": "AI Coding Agent for Laravel — give Claude / OpenCode / Cursor a Laravel engineering brain via MCP",
+  "description": "MCP-native AI Agent Framework — give Claude / OpenCode / Cursor a project-agnostic engineering brain via MCP",
   "keywords": [
     "laravel",
     "mcp",
     "model-context-protocol",
     "ai-agent",
+    "runtime",
+    "framework",
+    "agent",
     "coding-agent",
     "opencode",
     "claude",
@@ -20,7 +23,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dok4everak47/laravel-mcp-server.git"
+    "url": "git+https://github.com/dok4everak47/cortex-agent-runtime.git"
   },
   "license": "MIT",
   "author": "luongchin",

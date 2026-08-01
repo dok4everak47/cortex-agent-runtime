@@ -1,6 +1,6 @@
 import { describe, it } from "node:test"
 import assert from "node:assert"
-import { filterRoutes, formatRouteList, type RouteEntry } from "../tools/route-list.js"
+import { filterRoutes, formatRouteList, type RouteEntry } from "../domains/laravel/tools/route-list.js"
 
 const MOCK_ROUTES: RouteEntry[] = [
   {

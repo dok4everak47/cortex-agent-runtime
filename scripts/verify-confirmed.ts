@@ -1,4 +1,4 @@
-import { handleIntentPlanner } from "../src/planner/index.js"
+import { handleIntentPlanner } from "../src/domains/laravel/planner/index.js"
 
 async function main() {
   const r = await handleIntentPlanner({ request: "增强博客搜索", dryRun: false, confirmed: true })

@@ -8,6 +8,26 @@
 
 失败时 `isError: true`，`content[0].text` 形如 `Error: <message>`。
 
+## Generic 域工具（任何项目都加载）
+
+### gitStatus
+
+- 描述: 显示 git 状态摘要（分支、暂存/未暂存变更）
+- 参数: `{}`
+- 返回: `git status --short --branch` 输出文本
+
+### fileSearch
+
+- 描述: 按 glob 搜索文件，排除 `.git` / `node_modules` / `vendor`
+- 参数: `{ pattern: string }`（如 `src/**/*.ts`）
+- 返回: 相对路径列表文本
+
+### projectTree
+
+- 描述: 显示项目两层目录树，排除 `.git` / `node_modules` / `vendor`
+- 参数: `{}`
+- 返回: 目录树文本
+
 ## Tools
 
 ### artisan
@@ -207,7 +227,8 @@
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `LARAVEL_PROJECT_PATH` | `process.cwd()` | Laravel 项目路径 |
+| `CORTEX_PROJECT_PATH` | — | 项目路径（优先） |
+| `LARAVEL_PROJECT_PATH` | `process.cwd()` | Laravel 项目路径（向后兼容） |
 | `PHP_PATH` | `php` | PHP 可执行文件路径 |
 
 ### 安全机制

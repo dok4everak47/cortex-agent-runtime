@@ -1,6 +1,6 @@
 import { describe, it, mock, afterEach } from "node:test"
 import assert from "node:assert"
-import { Logger, LogLevel } from "../logger.js"
+import { Logger, LogLevel } from "../core/logger.js"
 
 // Capture stderr writes for assertions
 function captureStderr() {

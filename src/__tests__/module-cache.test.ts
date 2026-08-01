@@ -5,7 +5,7 @@ import { join } from "path"
 import { tmpdir } from "os"
 
 before(() => {
-  mock.module("../mcp.js", {
+  mock.module("../domains/laravel/mcp.js", {
     exports: {
       getLogger: () => ({ debug: () => {}, info: () => {}, warn: () => {}, error: () => {} }),
     },
@@ -21,13 +21,13 @@ describe("ModuleCache", () => {
 
   it("get returns null when no cache file exists", async () => {
     tmpDir = mkdtempSync(join(tmpdir(), "module-cache-"))
-    const { ModuleCache } = await import("../context/module-cache.js")
+    const { ModuleCache } = await import("../domains/laravel/context/module-cache.js")
     assert.equal(new ModuleCache(tmpDir).get("models"), null)
   })
 
   it("roundtrips set then get", async () => {
     tmpDir = mkdtempSync(join(tmpdir(), "module-cache-"))
-    const { ModuleCache } = await import("../context/module-cache.js")
+    const { ModuleCache } = await import("../domains/laravel/context/module-cache.js")
     const cache = new ModuleCache(tmpDir)
     cache.set("models", ["App\\Models\\Post"], {})
     const entry = cache.get<unknown>("models")
@@ -39,7 +39,7 @@ describe("ModuleCache", () => {
 
   it("returns null for a corrupt cache file", async () => {
     tmpDir = mkdtempSync(join(tmpdir(), "module-cache-"))
-    const { ModuleCache } = await import("../context/module-cache.js")
+    const { ModuleCache } = await import("../domains/laravel/context/module-cache.js")
     mkdirSync(join(tmpDir, ".mcp", "context"), { recursive: true })
     writeFileSync(join(tmpDir, ".mcp", "context", "routes.json"), "not-json", "utf-8")
     assert.equal(new ModuleCache(tmpDir).get("routes"), null)
@@ -47,7 +47,7 @@ describe("ModuleCache", () => {
 
   it("isFresh compares dependency mtimes", async () => {
     tmpDir = mkdtempSync(join(tmpdir(), "module-cache-"))
-    const { ModuleCache } = await import("../context/module-cache.js")
+    const { ModuleCache } = await import("../domains/laravel/context/module-cache.js")
     const cache = new ModuleCache(tmpDir)
     const entry = { data: "x", builtAt: Date.now(), dependencies: { "/a.php": 100 } }
     assert.equal(cache.isFresh(entry, { "/a.php": 100 }), true)
@@ -58,7 +58,7 @@ describe("ModuleCache", () => {
 
   it("collectDeps records mtimes of matching files", async () => {
     tmpDir = mkdtempSync(join(tmpdir(), "module-cache-"))
-    const { ModuleCache } = await import("../context/module-cache.js")
+    const { ModuleCache } = await import("../domains/laravel/context/module-cache.js")
     mkdirSync(join(tmpDir, "routes"), { recursive: true })
     writeFileSync(join(tmpDir, "routes", "web.php"), "<?php")
     const cache = new ModuleCache(tmpDir)
@@ -71,7 +71,7 @@ describe("ModuleCache", () => {
 
   it("collectDeps handles recursive ** glob and literal files", async () => {
     tmpDir = mkdtempSync(join(tmpdir(), "module-cache-"))
-    const { ModuleCache } = await import("../context/module-cache.js")
+    const { ModuleCache } = await import("../domains/laravel/context/module-cache.js")
     mkdirSync(join(tmpDir, "app", "Models", "Admin"), { recursive: true })
     writeFileSync(join(tmpDir, "app", "Models", "User.php"), "<?php")
     writeFileSync(join(tmpDir, "app", "Models", "Admin", "Role.php"), "<?php")
@@ -83,7 +83,7 @@ describe("ModuleCache", () => {
 
   it("invalidate removes a single module file", async () => {
     tmpDir = mkdtempSync(join(tmpdir(), "module-cache-"))
-    const { ModuleCache } = await import("../context/module-cache.js")
+    const { ModuleCache } = await import("../domains/laravel/context/module-cache.js")
     const cache = new ModuleCache(tmpDir)
     cache.set("routes", [], {})
     cache.set("models", [], {})
@@ -94,7 +94,7 @@ describe("ModuleCache", () => {
 
   it("clearModuleCacheDir removes the whole directory", async () => {
     tmpDir = mkdtempSync(join(tmpdir(), "module-cache-"))
-    const { ModuleCache, clearModuleCacheDir } = await import("../context/module-cache.js")
+    const { ModuleCache, clearModuleCacheDir } = await import("../domains/laravel/context/module-cache.js")
     new ModuleCache(tmpDir).set("models", [], {})
     assert.ok(existsSync(join(tmpDir, ".mcp", "context")))
     clearModuleCacheDir(tmpDir)
@@ -103,7 +103,7 @@ describe("ModuleCache", () => {
 
   it("clearLegacyCache removes the old context.json", async () => {
     tmpDir = mkdtempSync(join(tmpdir(), "module-cache-"))
-    const { clearLegacyCache } = await import("../context/module-cache.js")
+    const { clearLegacyCache } = await import("../domains/laravel/context/module-cache.js")
     mkdirSync(join(tmpDir, ".mcp"), { recursive: true })
     writeFileSync(join(tmpDir, ".mcp", "context.json"), "{}")
     clearLegacyCache(tmpDir)

@@ -1,7 +1,7 @@
 import { describe, it } from "node:test"
 import assert from "node:assert"
-import type { IntentPlannerDeps } from "../planner/index.js"
-import type { ProjectContext } from "../context/types.js"
+import type { IntentPlannerDeps } from "../domains/laravel/planner/index.js"
+import type { ProjectContext } from "../domains/laravel/context/types.js"
 
 function mockContext(): ProjectContext {
   return {
@@ -57,7 +57,7 @@ function llmDeps(overrides: Partial<IntentPlannerDeps> = {}): {
 
 describe("parseIntent two-stage routing", () => {
   it("returns the rule-based result directly when confidence >= 0.8 (no LLM call)", async () => {
-    const { parseIntent } = await import("../planner/index.js")
+    const { parseIntent } = await import("../domains/laravel/planner/index.js")
     const { deps, analyzeCalls } = llmDeps()
     const intent = await parseIntent("Create a Post CRUD", "/tmp/project", deps)
     assert.equal(intent.action, "create_crud")
@@ -67,7 +67,7 @@ describe("parseIntent two-stage routing", () => {
   })
 
   it("uses the LLM result for low-confidence requests when LLM is enabled", async () => {
-    const { parseIntent } = await import("../planner/index.js")
+    const { parseIntent } = await import("../domains/laravel/planner/index.js")
     const { deps, analyzeCalls } = llmDeps()
     const intent = await parseIntent("增强博客的文章搜索功能", "/tmp/project", deps)
     assert.equal(intent.action, "enhance")
@@ -78,7 +78,7 @@ describe("parseIntent two-stage routing", () => {
   })
 
   it("passes the loaded project context into the LLM analyzer", async () => {
-    const { parseIntent } = await import("../planner/index.js")
+    const { parseIntent } = await import("../domains/laravel/planner/index.js")
     let received: unknown = null
     const { deps } = llmDeps({
       loadContext: async () => mockContext(),
@@ -92,7 +92,7 @@ describe("parseIntent two-stage routing", () => {
   })
 
   it("falls back to the rule-based result with a hint when LLM is disabled", async () => {
-    const { parseIntent } = await import("../planner/index.js")
+    const { parseIntent } = await import("../domains/laravel/planner/index.js")
     const { deps, analyzeCalls } = llmDeps({
       getLLMConfig: () => ({
         apiKey: "",
@@ -108,7 +108,7 @@ describe("parseIntent two-stage routing", () => {
   })
 
   it("falls back to the rule-based result when the LLM analyzer fails", async () => {
-    const { parseIntent } = await import("../planner/index.js")
+    const { parseIntent } = await import("../domains/laravel/planner/index.js")
     const { deps, analyzeCalls } = llmDeps({
       analyzeIntent: async () => {
         analyzeCalls.push("called")
@@ -121,7 +121,7 @@ describe("parseIntent two-stage routing", () => {
   })
 
   it("skips the LLM when no project path is provided", async () => {
-    const { parseIntent } = await import("../planner/index.js")
+    const { parseIntent } = await import("../domains/laravel/planner/index.js")
     const { deps, analyzeCalls } = llmDeps()
     const intent = await parseIntent("增强博客的文章搜索功能", undefined, deps)
     assert.ok(intent.summary?.includes("LLM_API_KEY"))

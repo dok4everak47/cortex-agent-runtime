@@ -4,29 +4,39 @@ import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js"
-import { TOOL_DEFINITIONS, handleToolCall } from "./tool-registry.js"
-import { getLogger } from "./mcp.js"
-import { contextManager } from "./context/index.js"
-import { registerContextResource } from "./context/resource.js"
+import { ToolRegistry } from "./core/registry.js"
+import { getConfig, getLogger } from "./core/mcp.js"
+import { detectDomains } from "./core/detector.js"
+import { registerContextResource } from "./domains/laravel/context/resource.js"
+import { contextManager } from "./domains/laravel/context/context-manager.js"
 
 const logger = getLogger()
 
+const { projectPath } = getConfig()
+const domains = detectDomains(projectPath)
+const registry = new ToolRegistry()
+for (const domain of domains) {
+  registry.registerDomain(domain)
+}
+
 const server = new Server(
-  { name: "laravel-mcp-server", version: "0.1.0" },
+  { name: "cortex-agent-runtime", version: "1.0.0-beta.1" },
   { capabilities: { tools: {}, resources: {} } },
 )
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   logger.info("tools/list called")
-  return { tools: TOOL_DEFINITIONS }
+  return { tools: registry.listTools() }
 })
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params
-  return handleToolCall(name, args ?? {})
+  return registry.callTool(name, args ?? {})
 })
 
-registerContextResource(server, (projectPath) => contextManager.getContext(projectPath))
+if (domains.some((d) => d.id === "laravel")) {
+  registerContextResource(server, (p) => contextManager.getContext(p))
+}
 
 const transport = new StdioServerTransport()
 await server.connect(transport)

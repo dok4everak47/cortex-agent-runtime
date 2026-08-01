@@ -12,9 +12,9 @@ import {
 } from "fs"
 import { dirname, join } from "path"
 import { tmpdir } from "os"
-import { runArtisan } from "../../mcp.js"
-import { handleIntentPlanner } from "../../planner/index.js"
-import { RunStateStore, type RunRecord } from "../../workflows/run-state.js"
+import { runArtisan } from "../../domains/laravel/mcp.js"
+import { handleIntentPlanner } from "../../domains/laravel/planner/index.js"
+import { RunStateStore, type RunRecord } from "../../domains/laravel/workflows/run-state.js"
 import type { GoldenScenario } from "./scenarios.js"
 
 export type ScenarioCheck = { name: string; passed: boolean; detail: string }

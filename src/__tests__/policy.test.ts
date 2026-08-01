@@ -1,6 +1,6 @@
 import { describe, it } from "node:test"
 import assert from "node:assert"
-import { CommandPolicy, defaultPolicy } from "../security/policy.js"
+import { CommandPolicy, defaultPolicy } from "../domains/laravel/security/policy.js"
 
 describe("CommandPolicy", () => {
   it("allows whitelisted commands", () => {

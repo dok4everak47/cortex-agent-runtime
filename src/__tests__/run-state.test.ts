@@ -3,8 +3,8 @@ import assert from "node:assert"
 import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync, readdirSync } from "fs"
 import { join } from "path"
 import { tmpdir } from "os"
-import { formatRunId, RunStateStore, rollbackRun } from "../workflows/run-state.js"
-import { runPlan } from "../workflows/run-plan.js"
+import { formatRunId, RunStateStore, rollbackRun } from "../domains/laravel/workflows/run-state.js"
+import { runPlan } from "../domains/laravel/workflows/run-plan.js"
 
 function makeProject(): string {
   const p = mkdtempSync(join(tmpdir(), "runstate-"))

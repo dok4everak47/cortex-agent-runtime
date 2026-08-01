@@ -1,8 +1,8 @@
 import { describe, it } from "node:test"
 import assert from "node:assert"
-import { executeMakeModel } from "../tools/make-model.js"
-import { executeMakeController } from "../tools/make-controller.js"
-import { executeMakeMigration } from "../tools/make-migration.js"
+import { executeMakeModel } from "../domains/laravel/tools/make-model.js"
+import { executeMakeController } from "../domains/laravel/tools/make-controller.js"
+import { executeMakeMigration } from "../domains/laravel/tools/make-migration.js"
 
 describe("makeModel", () => {
   it("returns error for missing name", () => {

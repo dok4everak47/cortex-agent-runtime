@@ -1,6 +1,6 @@
 import { describe, it, mock, afterEach } from "node:test"
 import assert from "node:assert"
-import type { ProjectContext } from "../context/types.js"
+import type { ProjectContext } from "../domains/laravel/context/types.js"
 
 function mockContext(): ProjectContext {
   return {
@@ -37,7 +37,7 @@ describe("getLLMConfig", () => {
   })
 
   it("defaults to disabled and DeepSeek when no env is set", async () => {
-    const { getLLMConfig } = await import("../planner/llm-analyzer.js")
+    const { getLLMConfig } = await import("../domains/laravel/planner/llm-analyzer.js")
     const cfg = getLLMConfig()
     assert.equal(cfg.enabled, false)
     assert.equal(cfg.apiKey, "")
@@ -49,7 +49,7 @@ describe("getLLMConfig", () => {
     process.env.LLM_API_KEY = "sk-test"
     process.env.LLM_BASE_URL = "https://api.openai.com/v1"
     process.env.LLM_MODEL = "gpt-4o-mini"
-    const { getLLMConfig } = await import("../planner/llm-analyzer.js")
+    const { getLLMConfig } = await import("../domains/laravel/planner/llm-analyzer.js")
     const cfg = getLLMConfig()
     assert.equal(cfg.enabled, true)
     assert.equal(cfg.baseUrl, "https://api.openai.com/v1")
@@ -71,7 +71,7 @@ describe("analyzeIntent", () => {
       called = true
       return llmResponse("{}")
     })
-    const { analyzeIntent } = await import("../planner/llm-analyzer.js")
+    const { analyzeIntent } = await import("../domains/laravel/planner/llm-analyzer.js")
     const result = await analyzeIntent("给博客加评论功能", mockContext())
     assert.equal(result, null)
     assert.equal(called, false)
@@ -92,7 +92,7 @@ describe("analyzeIntent", () => {
         }),
       )
     })
-    const { analyzeIntent } = await import("../planner/llm-analyzer.js")
+    const { analyzeIntent } = await import("../domains/laravel/planner/llm-analyzer.js")
     const result = await analyzeIntent("增强博客的文章搜索功能，用全文搜索替代 LIKE", mockContext())
     assert.ok(result)
     assert.equal(result!.action, "enhance")
@@ -107,7 +107,7 @@ describe("analyzeIntent", () => {
   it("strips markdown code fences from the response", async () => {
     process.env.LLM_API_KEY = "sk-test"
     mock.method(globalThis, "fetch", async () => llmResponse("```json\n{\"action\":\"fix_bug\",\"entity\":\"NoteController\",\"summary\":\"修复保存异常\"}\n```"))
-    const { analyzeIntent } = await import("../planner/llm-analyzer.js")
+    const { analyzeIntent } = await import("../domains/laravel/planner/llm-analyzer.js")
     const result = await analyzeIntent("修复文章保存异常", mockContext())
     assert.ok(result)
     assert.equal(result!.action, "fix_bug")
@@ -117,7 +117,7 @@ describe("analyzeIntent", () => {
   it("forces api options for create_api", async () => {
     process.env.LLM_API_KEY = "sk-test"
     mock.method(globalThis, "fetch", async () => llmResponse(JSON.stringify({ action: "create_api", entity: "Post" })))
-    const { analyzeIntent } = await import("../planner/llm-analyzer.js")
+    const { analyzeIntent } = await import("../domains/laravel/planner/llm-analyzer.js")
     const result = await analyzeIntent("为 Post 做 API", mockContext())
     assert.ok(result)
     assert.equal(result!.action, "create_api")
@@ -128,7 +128,7 @@ describe("analyzeIntent", () => {
   it("returns null when the response is not valid JSON", async () => {
     process.env.LLM_API_KEY = "sk-test"
     mock.method(globalThis, "fetch", async () => llmResponse("this is not json"))
-    const { analyzeIntent } = await import("../planner/llm-analyzer.js")
+    const { analyzeIntent } = await import("../domains/laravel/planner/llm-analyzer.js")
     const result = await analyzeIntent("随便写点东西", mockContext())
     assert.equal(result, null)
   })
@@ -138,7 +138,7 @@ describe("analyzeIntent", () => {
     mock.method(globalThis, "fetch", async () => {
       throw new Error("network down")
     })
-    const { analyzeIntent } = await import("../planner/llm-analyzer.js")
+    const { analyzeIntent } = await import("../domains/laravel/planner/llm-analyzer.js")
     const result = await analyzeIntent("随便写点东西", mockContext())
     assert.equal(result, null)
   })
@@ -146,7 +146,7 @@ describe("analyzeIntent", () => {
   it("returns null when the HTTP status is not ok", async () => {
     process.env.LLM_API_KEY = "sk-test"
     mock.method(globalThis, "fetch", async () => new Response("{}", { status: 401 }))
-    const { analyzeIntent } = await import("../planner/llm-analyzer.js")
+    const { analyzeIntent } = await import("../domains/laravel/planner/llm-analyzer.js")
     const result = await analyzeIntent("随便写点东西", mockContext())
     assert.equal(result, null)
   })
@@ -154,7 +154,7 @@ describe("analyzeIntent", () => {
   it("returns null when the LLM action is not allowed", async () => {
     process.env.LLM_API_KEY = "sk-test"
     mock.method(globalThis, "fetch", async () => llmResponse(JSON.stringify({ action: "drop_database" })))
-    const { analyzeIntent } = await import("../planner/llm-analyzer.js")
+    const { analyzeIntent } = await import("../domains/laravel/planner/llm-analyzer.js")
     const result = await analyzeIntent("删库", mockContext())
     assert.equal(result, null)
   })
@@ -167,7 +167,7 @@ describe("analyzeIntent", () => {
       assert.ok(body.includes("模型"))
       return llmResponse(JSON.stringify({ action: "debug", entity: "" }))
     })
-    const { analyzeIntent } = await import("../planner/llm-analyzer.js")
+    const { analyzeIntent } = await import("../domains/laravel/planner/llm-analyzer.js")
     const result = await analyzeIntent("这个报错怎么解决", mockContext())
     assert.ok(result)
     assert.equal(result!.action, "debug")

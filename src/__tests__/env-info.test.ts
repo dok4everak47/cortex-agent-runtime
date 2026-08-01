@@ -3,7 +3,7 @@ import assert from "node:assert"
 
 describe("envInfo", () => {
   before(() => {
-    mock.module("../mcp.js", {
+    mock.module("../domains/laravel/mcp.js", {
       exports: {
         runArtisan: () => "local",
         runTinker: (script: string) => {
@@ -17,7 +17,7 @@ describe("envInfo", () => {
   })
 
   it("combines multiple tinker calls into output", async () => {
-    const { executeEnvInfo } = await import("../tools/env-info.js")
+    const { executeEnvInfo } = await import("../domains/laravel/tools/env-info.js")
     const result = executeEnvInfo()
     assert.equal(result.isError, false)
     assert.ok(result.content[0].text.includes("Environment: local"))
