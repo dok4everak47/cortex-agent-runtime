@@ -10,10 +10,11 @@ function makeDir(): string {
 }
 
 describe("detectDomains", () => {
-  it("always includes the generic domain", () => {
+  it("always includes the generic and orchestration domains", () => {
     const dir = makeDir()
     const domains = detectDomains(dir)
     assert.ok(domains.some((d) => d.id === "generic"))
+    assert.ok(domains.some((d) => d.id === "orchestration"))
     assert.equal(domains.some((d) => d.id === "laravel"), false)
     rmSync(dir, { recursive: true, force: true })
   })
