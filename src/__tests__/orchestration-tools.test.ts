@@ -176,10 +176,10 @@ describe("orchestration tools", () => {
   })
 
   describe("manifest registration", () => {
-    it("orchestration domain registers the 3 read-only tools", async () => {
+    it("orchestration domain registers the 3 read-only + 2 write tools", async () => {
       const { orchestrationDomain } = await import("../domains/orchestration/manifest.js")
       const names = orchestrationDomain.getTools().map((t) => t.name)
-      assert.deepEqual(names, ["taskStatus", "taskMetrics", "policyGet"])
+      assert.deepEqual(names, ["taskStatus", "taskMetrics", "policyGet", "taskAccept", "taskAdvance"])
       for (const name of names) {
         assert.ok(orchestrationDomain.getHandlers()[name], `missing handler for ${name}`)
       }

@@ -2,6 +2,8 @@ import type { DomainManifest, ToolDefinition, ToolHandler } from "../../core/reg
 import { executeTaskStatus } from "./tools/task-status.js"
 import { executeTaskMetrics } from "./tools/task-metrics.js"
 import { executePolicyGet } from "./tools/policy-get.js"
+import { executeTaskAccept } from "./tools/task-accept.js"
+import { executeTaskAdvance } from "./tools/task-advance.js"
 
 const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
@@ -31,18 +33,43 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: [],
     },
   },
+  {
+    name: "taskAccept",
+    description: "接受当前/指定任务: VERIFYING + verify 全过 → ACCEPTED (by=human); 状态不对或验证未全过 → 明确报错。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        taskId: { type: "string", description: "任务 ID, 缺省用当前任务" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "taskAdvance",
+    description: "自动推进任务: MERGED 幂等 no-op; VERIFYING 验证未全过 → BLOCKED 报错; human 审批 → WAITING_HUMAN 不推进; auto/无 plan → ACCEPTED → doMerge (git commit + push, noPush 可选跳过)。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        taskId: { type: "string", description: "任务 ID, 缺省用当前任务" },
+        noPush: { type: "boolean", description: "true 时跳过 git push (默认 false 即默认 push)" },
+      },
+      required: [],
+    },
+  },
 ]
 
 const toolHandlers: Record<string, ToolHandler> = {
   taskStatus: executeTaskStatus,
   taskMetrics: executeTaskMetrics,
   policyGet: executePolicyGet,
+  taskAccept: executeTaskAccept,
+  taskAdvance: executeTaskAdvance,
 }
 
 export const orchestrationDomain: DomainManifest = {
   id: "orchestration",
   name: "Orchestration",
-  description: "任务编排只读工具: 任务状态、指标、审批策略",
+  description: "任务编排: 只读查询 (状态/指标/策略) + 推进 (accept/advance 含 git commit/push)",
   detect: () => true,
   getTools: () => TOOL_DEFINITIONS,
   getHandlers: () => toolHandlers,
